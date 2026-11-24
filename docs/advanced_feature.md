@@ -58,6 +58,7 @@ ends**. Only those times are tried.
 |---|---|---|
 | Start times tried per node | 168 | 12 to 19 |
 | Median execution time (small dataset, 5 runs) | 18.5 ms | 7.0 ms |
+| Median execution time (large dataset, see [indexing_results.md](indexing_results.md)) | 532 ms | 60 ms |
 | Finds slots that do not start on the hour | no | yes |
 
 ### Differences from Q8
