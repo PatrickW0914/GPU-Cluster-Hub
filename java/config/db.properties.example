@@ -1,0 +1,14 @@
+# GPU Cluster Hub -- database connection settings
+#
+# Copy this file to db.properties (which is gitignored) and fill in your values:
+#     cp java/config/db.properties.example java/config/db.properties
+#
+# These environment variables override the values below:
+#     GPUHUB_DB_URL, GPUHUB_DB_USER, GPUHUB_DB_PASSWORD
+
+db.url=jdbc:postgresql://localhost:5432/gpuhub?currentSchema=gpuhub
+db.user=YOUR_POSTGRES_USER
+
+# Leave blank if your local PostgreSQL does not ask for a password (the
+# Homebrew default). In this file format a backslash must be written twice.
+db.password=YOUR_PASSWORD

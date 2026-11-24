@@ -1,0 +1,9 @@
+# Local database credentials -- never commit (copy from db.properties.example)
+java/config/db.properties
+
+# Build output and generated data
+java/target/
+data_large/
+
+# macOS
+.DS_Store
