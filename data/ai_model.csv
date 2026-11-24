@@ -1,0 +1,29 @@
+model_id,model_name,task_category,framework,license,source_url,maintainer_id,description,added_on
+1,Llama-3.1-8B-Instruct,LLM,PyTorch,Llama 3.1 Community,https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct,40,General instruction-tuned LLM,2025-02-02
+2,Llama-3.1-70B-Instruct,LLM,PyTorch,Llama 3.1 Community,https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct,22,Large instruction-tuned LLM; needs several GPUs in bf16,2024-10-27
+3,Llama-2-7b-chat,LLM,PyTorch,Llama 2 Community,https://huggingface.co/meta-llama/Llama-2-7b-chat-hf,23,Superseded chat model kept for reproducing older papers,2024-11-06
+4,Qwen2.5-7B-Instruct,LLM,PyTorch,Apache-2.0,https://huggingface.co/Qwen/Qwen2.5-7B-Instruct,33,Multilingual instruction LLM,2024-09-23
+5,Qwen2.5-32B-Instruct,LLM,PyTorch,Apache-2.0,https://huggingface.co/Qwen/Qwen2.5-32B-Instruct,70,Mid-size instruction LLM,2025-03-09
+6,Mistral-7B-Instruct-v0.3,LLM,PyTorch,Apache-2.0,https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3,13,Compact instruction LLM,2024-06-26
+7,Phi-3.5-mini-instruct,LLM,PyTorch,MIT,https://huggingface.co/microsoft/Phi-3.5-mini-instruct,69,Small LLM for fast prototyping,2025-04-27
+8,gemma-2-9b-it,LLM,JAX,Gemma Terms of Use,https://huggingface.co/google/gemma-2-9b-it,22,Instruction-tuned Gemma 2,2024-02-02
+9,DeepSeek-R1-Distill-Qwen-14B,LLM,PyTorch,MIT,https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B,26,Reasoning-distilled LLM,2024-06-12
+10,ViT-B-16,Vision,JAX,Apache-2.0,https://github.com/google-research/vision_transformer,29,Image classification backbone,2024-06-22
+11,CLIP-ViT-L-14,Multimodal,PyTorch,MIT,https://huggingface.co/openai/clip-vit-large-patch14,10,Image-text embedding model,2024-06-23
+12,SAM-ViT-H,Vision,PyTorch,Apache-2.0,https://github.com/facebookresearch/segment-anything,34,Promptable segmentation,2025-04-04
+13,DINOv2-ViT-g-14,Vision,PyTorch,Apache-2.0,https://github.com/facebookresearch/dinov2,21,Self-supervised vision features,2024-08-05
+14,YOLOv8x,Detection,PyTorch,AGPL-3.0,https://github.com/ultralytics/ultralytics,22,Real-time object detection,2024-09-05
+15,EfficientNet-B7,Vision,TensorFlow,Apache-2.0,https://github.com/tensorflow/tpu,38,Image classification (TF Keras applications),2025-02-02
+16,Stable-Diffusion-XL-base-1.0,Diffusion,PyTorch,CreativeML OpenRAIL++-M,https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0,25,Text-to-image diffusion,2024-10-03
+17,Stable-Diffusion-v1-5,Diffusion,PyTorch,CreativeML OpenRAIL-M,https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5,20,Older text-to-image model used as a baseline,2024-03-19
+18,FLUX.1-dev,Diffusion,PyTorch,FLUX.1 [dev] Non-Commercial,https://huggingface.co/black-forest-labs/FLUX.1-dev,71,Rectified-flow text-to-image,2024-01-29
+19,Wan2.1-T2V,Diffusion,PyTorch,Apache-2.0,https://github.com/Wan-Video/Wan2.1,25,Text-to-video diffusion transformer,2024-07-31
+20,CogVideoX-5B,Diffusion,PyTorch,CogVideoX License,https://huggingface.co/THUDM/CogVideoX-5b,69,Text-to-video generation,2024-05-22
+21,Whisper-large-v3,Audio,PyTorch,MIT,https://huggingface.co/openai/whisper-large-v3,70,Speech recognition,2024-01-02
+22,MusicGen-medium,Audio,PyTorch,CC-BY-NC-4.0,https://huggingface.co/facebook/musicgen-medium,22,Text-to-music generation,2024-02-05
+23,LLaVA-1.6-Mistral-7B,Multimodal,PyTorch,Apache-2.0,https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf,42,Vision-language assistant,2025-01-08
+24,Qwen2-VL-7B-Instruct,Multimodal,PyTorch,Apache-2.0,https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct,71,Vision-language model with video input,2024-01-14
+25,LAA-Net,Detection,PyTorch,Research-only,,10,Deepfake detector (localized artifact attention),2024-05-09
+26,UIA-ViT,Detection,PyTorch,Research-only,,34,Deepfake detector (unsupervised inconsistency-aware ViT),2024-07-30
+27,AltFreezing,Detection,PyTorch,Research-only,,30,Video deepfake detector (spatiotemporal),2024-11-30
+28,Xception-FF++,Detection,PyTorch,Research-only,,40,Classic face-forgery baseline,2024-09-23

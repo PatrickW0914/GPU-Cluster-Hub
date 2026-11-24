@@ -1,0 +1,13 @@
+env_id,env_name,python_version,cuda_version,framework,framework_version,container_image,created_on
+1,torch2.5-cu126-py312,3.12,12.6,PyTorch,2.5.1,docker://pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime,2024-06-19
+2,torch2.4-cu124-py311,3.11,12.4,PyTorch,2.4.1,docker://pytorch/pytorch:2.4.1-cuda12.4-cudnn9-runtime,2023-04-09
+3,torch2.3-cu121-py310,3.10,12.1,PyTorch,2.3.1,,2024-02-13
+4,torch2.1-cu118-py310,3.10,11.8,PyTorch,2.1.2,,2024-01-14
+5,torch1.13-cu117-py39,3.9,11.7,PyTorch,1.13.1,,2023-11-17
+6,torch1.10-cu113-py38,3.8,11.3,PyTorch,1.10.2,,2024-04-30
+7,legacy-py36-cu102,3.6,10.2,PyTorch,1.8.2,,2023-03-14
+8,vllm0.6-cu124-py311,3.11,12.4,PyTorch,2.4.0,docker://vllm/vllm-openai:v0.6.3,2023-12-30
+9,diffusers0.31-cu121-py310,3.10,12.1,PyTorch,2.3.1,,2023-07-23
+10,jax0.4-cu123-py311,3.11,12.3,JAX,0.4.30,,2023-10-27
+11,tf2.15-cu121-py310,3.10,12.1,TensorFlow,2.15.1,docker://tensorflow/tensorflow:2.15.0-gpu,2023-07-13
+12,onnxrt1.19-cu122-py311,3.11,12.2,ONNX,1.19.2,,2023-02-14

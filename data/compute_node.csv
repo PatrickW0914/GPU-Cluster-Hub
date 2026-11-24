@@ -1,0 +1,13 @@
+node_id,hostname,partition_name,cpu_cores,ram_gb,local_nvme_tb,max_cuda_version,node_status,rack_location
+1,gpu-h100-01,gpu-long,112,2048,15.36,12.6,UP,R01-U04
+2,gpu-h100-02,gpu-long,112,2048,15.36,12.6,UP,R01-U14
+3,gpu-a100-01,gpu,128,1024,7.68,12.4,UP,R01-U24
+4,gpu-a100-02,gpu,128,1024,7.68,12.4,UP,R01-U34
+5,gpu-a100-03,gpu,128,1024,7.68,12.4,UP,R02-U04
+6,gpu-a100p-01,gpu,64,512,3.84,12.2,UP,R02-U14
+7,gpu-l40s-01,gpu-short,64,512,3.84,12.4,UP,R02-U24
+8,gpu-l40s-02,gpu-short,64,512,3.84,12.4,UP,R02-U34
+9,gpu-a6000-01,gpu-short,48,384,3.84,12.2,UP,R03-U04
+10,gpu-a6000-02,gpu-short,48,384,3.84,12.2,UP,R03-U14
+11,gpu-v100-01,gpu,40,256,1.92,11.8,DRAIN,R03-U24
+12,gpu-debug-01,debug,32,128,0.48,12.2,UP,R03-U34

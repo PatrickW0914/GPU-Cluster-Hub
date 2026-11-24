@@ -1,0 +1,72 @@
+user_id,net_id,full_name,email,user_role,is_admin,is_active,created_at
+1,ngarcia386,Dr. Noah Garcia,ngarcia386@gpuhub.example.edu,Faculty,false,true,2025-12-31 14:00:00
+2,rgarcia812,Dr. Ravi Garcia,rgarcia812@gpuhub.example.edu,Faculty,false,true,2024-11-03 10:00:00
+3,azhang200,Dr. Aisha Zhang,azhang200@gpuhub.example.edu,Faculty,false,true,2024-05-14 15:00:00
+4,nhaddad379,Dr. Noah Haddad,nhaddad379@gpuhub.example.edu,Faculty,false,true,2024-11-04 12:00:00
+5,mmartine010,Dr. Marco Martinez,mmartine010@gpuhub.example.edu,Faculty,false,true,2024-03-10 16:00:00
+6,adas888,Dr. Aarav Das,adas888@gpuhub.example.edu,Faculty,false,true,2025-05-10 13:00:00
+7,ecohen656,Dr. Ethan Cohen,ecohen656@gpuhub.example.edu,Faculty,false,true,2025-03-27 15:00:00
+8,irossi877,Dr. Isabel Rossi,irossi877@gpuhub.example.edu,Faculty,false,true,2024-06-12 10:00:00
+9,lkumar504,Leo Kumar,lkumar504@gpuhub.example.edu,Postdoc,false,true,2024-06-17 17:00:00
+10,wkim895,Wei Kim,wkim895@gpuhub.example.edu,Postdoc,false,true,2025-01-04 09:00:00
+11,kcohen864,Kai Cohen,kcohen864@gpuhub.example.edu,Postdoc,false,true,2026-01-18 10:00:00
+12,igarcia531,Isabel Garcia,igarcia531@gpuhub.example.edu,Postdoc,false,true,2024-09-27 17:00:00
+13,mzhang692,Maya Zhang,mzhang692@gpuhub.example.edu,Postdoc,false,true,2026-02-09 13:00:00
+14,myamamot092,Marco Yamamoto,myamamot092@gpuhub.example.edu,PhD,false,true,2025-10-20 14:00:00
+15,hrossi307,Hana Rossi,hrossi307@gpuhub.example.edu,PhD,false,true,2024-08-11 17:00:00
+16,hgarcia504,Hana Garcia,hgarcia504@gpuhub.example.edu,PhD,false,true,2025-07-31 15:00:00
+17,ttanaka888,Tomas Tanaka,ttanaka888@gpuhub.example.edu,PhD,false,true,2025-09-28 11:00:00
+18,dahmed537,Diego Ahmed,dahmed537@gpuhub.example.edu,PhD,false,true,2024-08-09 08:00:00
+19,onguyen805,Omar Nguyen,onguyen805@gpuhub.example.edu,PhD,false,true,2023-11-14 12:00:00
+20,rshah687,Ravi Shah,rshah687@gpuhub.example.edu,PhD,false,true,2025-01-06 12:00:00
+21,nrossi197,Noah Rossi,nrossi197@gpuhub.example.edu,PhD,false,true,2023-10-19 15:00:00
+22,tkumar819,Tomas Kumar,tkumar819@gpuhub.example.edu,PhD,false,true,2023-12-21 08:00:00
+23,smoreno516,Sara Moreno,smoreno516@gpuhub.example.edu,PhD,false,true,2024-02-10 13:00:00
+24,lmartine829,Lucas Martinez,lmartine829@gpuhub.example.edu,PhD,false,true,2024-08-26 18:00:00
+25,vnovak966,Victor Novak,vnovak966@gpuhub.example.edu,PhD,false,true,2023-09-19 09:00:00
+26,jschmidt238,Jun Schmidt,jschmidt238@gpuhub.example.edu,PhD,false,true,2025-05-11 10:00:00
+27,rpatel196,Ravi Patel,rpatel196@gpuhub.example.edu,PhD,false,true,2025-12-11 12:00:00
+28,ksingh324,Kenji Singh,ksingh324@gpuhub.example.edu,PhD,false,true,2024-09-17 14:00:00
+29,achen626,Aisha Chen,achen626@gpuhub.example.edu,PhD,false,true,2023-10-05 08:00:00
+30,stanaka823,Sofia Tanaka,stanaka823@gpuhub.example.edu,PhD,false,true,2025-12-19 13:00:00
+31,ayamamot164,Amara Yamamoto,ayamamot164@gpuhub.example.edu,PhD,false,true,2025-11-08 15:00:00
+32,wivanova021,Wei Ivanova,wivanova021@gpuhub.example.edu,PhD,false,true,2024-01-19 09:00:00
+33,enguyen052,Ethan Nguyen,enguyen052@gpuhub.example.edu,PhD,false,true,2024-05-07 16:00:00
+34,llopez512,Lucas Lopez,llopez512@gpuhub.example.edu,PhD,false,true,2025-03-19 15:00:00
+35,mreyes582,Mei Reyes,mreyes582@gpuhub.example.edu,PhD,false,true,2023-10-20 15:00:00
+36,aivanova411,Aisha Ivanova,aivanova411@gpuhub.example.edu,PhD,false,true,2024-10-05 10:00:00
+37,ahuang870,Arjun Huang,ahuang870@gpuhub.example.edu,PhD,false,true,2023-09-10 12:00:00
+38,rlopez575,Ravi Lopez,rlopez575@gpuhub.example.edu,PhD,false,true,2024-04-30 18:00:00
+39,cshah727,Chloe Shah,cshah727@gpuhub.example.edu,PhD,false,true,2025-01-30 14:00:00
+40,mmartine667,Maya Martinez,mmartine667@gpuhub.example.edu,PhD,false,true,2024-04-22 08:00:00
+41,acohen684,Aisha Cohen,acohen684@gpuhub.example.edu,PhD,false,true,2025-05-14 13:00:00
+42,frossi512,Fatima Rossi,frossi512@gpuhub.example.edu,PhD,false,true,2024-04-27 13:00:00
+43,ischmidt081,Isabel Schmidt,ischmidt081@gpuhub.example.edu,PhD,false,true,2025-11-17 10:00:00
+44,wokafor746,Wei Okafor,wokafor746@gpuhub.example.edu,MS,false,true,2025-01-21 12:00:00
+45,zpark341,Zoe Park,zpark341@gpuhub.example.edu,MS,false,true,2025-10-03 18:00:00
+46,lsingh187,Lucas Singh,lsingh187@gpuhub.example.edu,MS,false,true,2024-12-09 11:00:00
+47,mtanaka098,Marco Tanaka,mtanaka098@gpuhub.example.edu,MS,false,true,2025-09-27 18:00:00
+48,asingh475,Anya Singh,asingh475@gpuhub.example.edu,MS,false,true,2025-07-18 08:00:00
+49,gkumar287,Grace Kumar,gkumar287@gpuhub.example.edu,MS,false,true,2024-07-20 16:00:00
+50,schen189,Sara Chen,schen189@gpuhub.example.edu,MS,false,true,2024-08-15 17:00:00
+51,thuang966,Tomas Huang,thuang966@gpuhub.example.edu,MS,false,true,2025-05-02 13:00:00
+52,dshah326,Diego Shah,dshah326@gpuhub.example.edu,MS,false,true,2024-08-29 14:00:00
+53,ppark203,Priya Park,ppark203@gpuhub.example.edu,MS,false,true,2024-08-24 14:00:00
+54,awang975,Aisha Wang,awang975@gpuhub.example.edu,MS,false,true,2023-11-09 09:00:00
+55,ltanaka236,Lucas Tanaka,ltanaka236@gpuhub.example.edu,MS,false,true,2025-07-06 18:00:00
+56,ichen728,Iris Chen,ichen728@gpuhub.example.edu,MS,false,true,2024-02-15 13:00:00
+57,rchen927,Ravi Chen,rchen927@gpuhub.example.edu,MS,false,true,2024-10-31 13:00:00
+58,fahmed940,Fatima Ahmed,fahmed940@gpuhub.example.edu,MS,false,true,2024-06-15 11:00:00
+59,hschmidt464,Hana Schmidt,hschmidt464@gpuhub.example.edu,Undergrad,false,false,2024-06-13 14:00:00
+60,mkim025,Marco Kim,mkim025@gpuhub.example.edu,Undergrad,false,true,2025-08-24 15:00:00
+61,mwang464,Mei Wang,mwang464@gpuhub.example.edu,Undergrad,false,true,2025-10-27 15:00:00
+62,whuang785,Wei Huang,whuang785@gpuhub.example.edu,Undergrad,false,true,2024-01-18 11:00:00
+63,frossi796,Felix Rossi,frossi796@gpuhub.example.edu,Undergrad,false,true,2026-01-26 14:00:00
+64,ssilva781,Samuel Silva,ssilva781@gpuhub.example.edu,Undergrad,false,true,2025-09-18 18:00:00
+65,dwang299,Daniel Wang,dwang299@gpuhub.example.edu,Undergrad,false,true,2025-05-18 16:00:00
+66,opark320,Omar Park,opark320@gpuhub.example.edu,Undergrad,false,true,2023-12-03 08:00:00
+67,iwang299,Isabel Wang,iwang299@gpuhub.example.edu,Undergrad,false,true,2025-02-02 17:00:00
+68,gtanaka401,Grace Tanaka,gtanaka401@gpuhub.example.edu,Undergrad,false,true,2024-02-28 17:00:00
+69,okim387,Omar Kim,okim387@gpuhub.example.edu,Staff,true,true,2024-09-23 14:00:00
+70,ddas774,Diego Das,ddas774@gpuhub.example.edu,Staff,true,true,2024-03-24 08:00:00
+71,thuang988,Tomas Huang,thuang988@gpuhub.example.edu,Staff,false,true,2025-03-23 10:00:00

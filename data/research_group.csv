@@ -1,0 +1,7 @@
+group_id,group_name,department,pi_user_id,weekly_gpu_hour_quota,created_on
+1,Video Understanding Lab,Electrical and Computer Engineering,1,900,2023-11-08
+2,Language Systems Lab,Computer Science and Engineering,2,1200,2024-02-28
+3,Robot Perception Lab,Mechanical Engineering,3,500,2024-02-21
+4,Computational Genomics Lab,Bioengineering,4,300,2023-08-29
+5,Trustworthy AI Lab,Computer Science and Engineering,5,800,2024-03-04
+6,Smart Mobility Lab,Civil and Environmental Engineering,6,600,2024-02-02

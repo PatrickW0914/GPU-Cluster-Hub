@@ -1,0 +1,513 @@
+### GPU Cluster Hub - Phase 1 test run (2026-10-25 23:08 UTC, PostgreSQL 16.15)
+
+$ dropdb --if-exists gpuhub && createdb gpuhub
+$ psql -d gpuhub -f sql/01_schema.sql
+     15 CREATE TABLE
+     13 CREATE INDEX
+     11 CREATE TRIGGER
+     10 CREATE FUNCTION
+      2 SET
+      2 CREATE VIEW
+      1 DROP SCHEMA
+      1 CREATE SCHEMA
+      1 ALTER TABLE
+
+$ psql -d gpuhub -f data/load_data.sql
+SET
+BEGIN
+COPY 71
+COPY 6
+COPY 81
+COPY 7
+COPY 12
+COPY 66
+COPY 28
+COPY 34
+COPY 12
+COPY 80
+COPY 85
+COPY 2367
+COPY 5157
+COPY 5573
+COPY 6780
+COMMIT
+ setval 
+--------
+     71
+(1 row)
+
+ setval 
+--------
+      6
+(1 row)
+
+ setval 
+--------
+      7
+(1 row)
+
+ setval 
+--------
+     12
+(1 row)
+
+ setval 
+--------
+     66
+(1 row)
+
+ setval 
+--------
+     28
+(1 row)
+
+ setval 
+--------
+     12
+(1 row)
+
+ setval 
+--------
+   2367
+(1 row)
+
+ setval 
+--------
+   5573
+(1 row)
+
+ANALYZE
+
+-- row counts after load
+SET
+          t           | count 
+----------------------+-------
+ cluster_user         |    71
+ research_group       |     6
+ membership           |    81
+ gpu_type             |     7
+ compute_node         |    12
+ gpu                  |    66
+ ai_model             |    28
+ model_version        |    34
+ software_env         |    12
+ node_hosts_version   |    80
+ env_supports_version |    85
+ reservation          |  2367
+ reservation_gpu      |  5157
+ job                  |  5573
+ job_loads_version    |  6780
+(15 rows)
+
+$ psql -d gpuhub -f tests/constraint_tests.sql
+SET
+SET
+BEGIN
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+INSERT 0 3
+INSERT 0 2
+INSERT 0 4
+SELECT 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET CONSTRAINTS
+SET CONSTRAINTS
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_ok 
+-----------
+ 
+
+ expect_ok 
+-----------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_ok 
+-----------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_ok 
+-----------
+ 
+
+ expect_ok 
+-----------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_ok 
+-----------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+ expect_error 
+--------------
+ 
+
+DO
+
+==================== TEST RESULTS ====================
+ id  |        category         |                                      test                                       |       expected       |          got          | outcome 
+-----+-------------------------+---------------------------------------------------------------------------------+----------------------+-----------------------+---------
+ A01 | PRIMARY KEY             | duplicate gpu_type_id                                                           | 23505                | 23505                 | PASS
+ A02 | UNIQUE                  | duplicate net_id                                                                | 23505                | 23505                 | PASS
+ A03 | UNIQUE                  | two GPUs in the same node slot                                                  | 23505                | 23505                 | PASS
+ A04 | UNIQUE                  | duplicate model_name                                                            | 23505                | 23505                 | PASS
+ A05 | NOT NULL                | user without e-mail                                                             | 23502                | 23502                 | PASS
+ A06 | CHECK                   | malformed e-mail                                                                | 23514                | 23514                 | PASS
+ A07 | CHECK                   | unknown user_role                                                               | 23514                | 23514                 | PASS
+ A08 | CHECK                   | reservation ends before it starts                                               | 23514                | 23514                 | PASS
+ A09 | CHECK                   | reservation longer than 72 h                                                    | 23514                | 23514                 | PASS
+ A10 | CHECK                   | COMPLETED job without end_time                                                  | 23514                | 23514                 | PASS
+ A11 | CHECK                   | FAILED job with exit code 0                                                     | 23514                | 23514                 | PASS
+ A12 | CHECK                   | GPU utilization above 100 %                                                     | 23514                | 23514                 | PASS
+ A13 | CHECK                   | negative weekly quota                                                           | 23514                | 23514                 | PASS
+ B01 | FOREIGN KEY             | GPU in a node that does not exist                                               | 23503                | 23503                 | PASS
+ B02 | FOREIGN KEY             | job loads a model version that does not exist                                   | 23503                | 23503                 | PASS
+ B03 | FK (aggregation)        | user books GPU time for a group they are not in                                 | 23503                | 23503                 | PASS
+ B04 | FK RESTRICT             | delete a node that still has GPUs                                               | 23503                | 23503                 | PASS
+ B05 | FK RESTRICT             | delete a model whose versions were used by jobs                                 | 23503                | 23503                 | PASS
+ B06 | FK RESTRICT             | delete a user who has reservations                                              | 23503                | 23503                 | PASS
+ B07 | FK CASCADE              | delete an unused model: versions, staged copies, compat rows cascade            | success              | success               | PASS
+ B08 | ON UPDATE CASCADE       | rename a version_tag; staged copies and job loads follow                        | success              | success               | PASS
+ B09 | DEFERRED FK             | new group whose PI is not a member (checked at COMMIT)                          | 23503                | 23503                 | PASS
+ B10 | DEFERRED FK             | new group + PI membership in one transaction                                    | success              | success               | PASS
+ B11 | DEFERRED FK             | remove the PI's membership while the PI still leads the group                   | 23503                | 23503                 | PASS
+ C01 | GH008 PI faculty        | make a PhD student the PI of a group                                            | GH008                | GH008                 | PASS
+ C02 | GH008 PI faculty        | change a PI's role to Postdoc                                                   | GH008                | GH008                 | PASS
+ C03 | GH001 no double booking | book a GPU that is taken 12:00-16:00 (overlaps 10:00-14:00)                     | GH001                | GH001                 | PASS
+ C04 | GH001 no double booking | back-to-back booking 14:00-18:00 on the same GPU is allowed                     | success              | success               | PASS
+ C05 | GH001 no double booking | a CANCELLED booking does not block its GPU                                      | success              | success               | PASS
+ C06 | GH001 no double booking | re-activate the cancelled booking onto a now-taken slot                         | GH001                | GH001                 | PASS
+ C07 | GH001 no double booking | move an existing booking onto a taken window                                    | GH001                | GH001                 | PASS
+ C08 | GH002 bookable GPU      | book a GPU that is in MAINTENANCE                                               | GH002                | GH002                 | PASS
+ C09 | GH002 bookable GPU      | book a GPU on a DRAIN node                                                      | GH002                | GH002                 | PASS
+ C10 | GH003 weekly quota      | 6 h x 2 GPUs = 12 GPU-h against a 10 GPU-h quota                                | GH003                | GH003                 | PASS
+ C11 | GH003 weekly quota      | 4 h x 2 GPUs = 8 GPU-h fits the 10 GPU-h quota                                  | success              | success               | PASS
+ C12 | GH003 weekly quota      | lowering the quota does not touch history, but extending a booking re-checks it | GH003                | GH003                 | PASS
+ C13 | GH004 >= 1 GPU          | reservation committed with no GPU                                               | GH004                | GH004                 | PASS
+ C14 | GH004 >= 1 GPU          | remove the last GPU from a reservation                                          | GH004                | GH004                 | PASS
+ C15 | GH005 job window        | job starts before its reservation                                               | GH005                | GH005                 | PASS
+ C16 | GH005 job window        | job ends after its reservation                                                  | GH005                | GH005                 | PASS
+ C17 | GH005 job window        | job under a CANCELLED reservation                                               | GH005                | GH005                 | PASS
+ C18 | GH006 env compatibility | load a JAX checkpoint in a PyTorch environment                                  | GH006                | GH006                 | PASS
+ C19 | GH006 env compatibility | switch a job to an env that cannot run what it loads                            | GH006                | GH006                 | PASS
+ C20 | GH007 node storage      | stage 600 GB of checkpoints on the 0.48 TB debug node                           | GH007                | GH007                 | PASS
+ C21 | GH007 node storage      | shrink a node's NVMe below what is staged on it                                 | GH007                | GH007                 | PASS
+ D01 | TRANSACTION             | 2-GPU booking whose 2nd GPU clashes is rolled back as a whole                   | GH001 + no rows left | GH001 + 0/0 rows left | PASS
+
+ passed | failed | total 
+--------+--------+-------
+     46 |      0 |    46
+
+Error messages raised (first 110 chars):
+ id  |                                                    message                                                     
+-----+----------------------------------------------------------------------------------------------------------------
+ A01 | duplicate key value violates unique constraint "gpu_type_pkey"
+ A02 | duplicate key value violates unique constraint "uq_user_netid"
+ A03 | duplicate key value violates unique constraint "uq_gpu_node_slot"
+ A04 | duplicate key value violates unique constraint "uq_model_name"
+ A05 | null value in column "email" of relation "cluster_user" violates not-null constraint
+ A06 | new row for relation "cluster_user" violates check constraint "ck_user_email"
+ A07 | new row for relation "cluster_user" violates check constraint "ck_user_role"
+ A08 | new row for relation "reservation" violates check constraint "ck_res_window"
+ A09 | new row for relation "reservation" violates check constraint "ck_res_maxlen"
+ A10 | new row for relation "job" violates check constraint "ck_job_state_times"
+ A11 | new row for relation "job" violates check constraint "ck_job_exit"
+ A12 | new row for relation "job" violates check constraint "ck_job_util"
+ A13 | new row for relation "research_group" violates check constraint "ck_group_quota"
+ B01 | insert or update on table "gpu" violates foreign key constraint "fk_gpu_node"
+ B02 | insert or update on table "job_loads_version" violates foreign key constraint "fk_jl_version"
+ B03 | insert or update on table "reservation" violates foreign key constraint "fk_res_membership"
+ B04 | update or delete on table "compute_node" violates foreign key constraint "fk_gpu_node" on table "gpu"
+ B05 | update or delete on table "model_version" violates foreign key constraint "fk_jl_version" on table "job_loads_
+ B06 | update or delete on table "membership" violates foreign key constraint "fk_res_membership" on table "reservati
+ B07 | committed cleanly (then rolled back by the test)
+ B08 | committed cleanly (then rolled back by the test)
+ B09 | insert or update on table "research_group" violates foreign key constraint "fk_group_pi_membership"
+ B10 | committed cleanly (then rolled back by the test)
+ B11 | update or delete on table "membership" violates foreign key constraint "fk_group_pi_membership" on table "rese
+ C01 | PI (user 9002) of group "Test Lab" must have role Faculty
+ C02 | User 9001 is the PI of a group and must remain Faculty
+ C03 | GPU 25 is already booked by reservation 9001 during 2027-03-01 12:00:00 - 2027-03-01 16:00:00
+ C04 | committed cleanly (then rolled back by the test)
+ C05 | committed cleanly (then rolled back by the test)
+ C06 | GPU 26 is already booked by reservation 9100 during 2027-03-01 10:00:00 - 2027-03-01 14:00:00
+ C07 | GPU 25 is already booked by reservation 9001 during 2027-03-01 13:00:00 - 2027-03-01 17:00:00
+ C08 | GPU 12 is not available for booking (maintenance, retired, or node not UP)
+ C09 | GPU 61 is not available for booking (maintenance, retired, or node not UP)
+ C10 | Group 9002 would use 12.0 GPU-hours in week of 2027-03-01, quota is 10.0
+ C11 | committed cleanly (then rolled back by the test)
+ C12 | Group 9002 would use 13.0 GPU-hours in week of 2027-03-01, quota is 10.0
+ C13 | Reservation 2371 must include at least one GPU
+ C14 | Reservation 9001 must include at least one GPU
+ C15 | Job "early" starts at 2027-03-01 09:00:00, outside reservation 9001 window [2027-03-01 10:00:00 , 2027-03-01 1
+ C16 | Job "fixture-job" ends at 2027-03-01 15:00:00, after reservation 9001 ends at 2027-03-01 14:00:00
+ C17 | Reservation 9002 is cancelled; job "ghost" cannot run under it
+ C18 | Model 8 version "jax-bf16" is not verified for environment 1
+ C19 | Environment 7 does not support every model version job 900001 loads
+ C20 | Node 12 would hold 645.83 GB of checkpoints, capacity is 480.00 GB
+ C21 | Node 3 would hold 42.64 GB of checkpoints, capacity is 10.00 GB
+ D01 | reservations 2369 -> 2369, reservation_gpu 5159 -> 5159
+
+ROLLBACK
+
+$ psql -d gpuhub -f sql/03_planned_queries.sql
+SET
+
+== Q1  Where can I run Llama-3.1-8B-Instruct (bf16) right now? ==
+   hostname   |   type_name    | vram_per_gpu | gpus_needed | gpus_free_now |                           usable_envs                           |                 local_path                 
+--------------+----------------+--------------+-------------+---------------+-----------------------------------------------------------------+--------------------------------------------
+ gpu-a100-03  | A100-SXM4-80GB |           80 |           1 |             6 | torch2.3-cu121-py310, torch2.4-cu124-py311, vllm0.6-cu124-py311 | /scratch/models/llama-3_1-8b-instruct/bf16
+ gpu-a6000-01 | RTX-A6000      |           48 |           1 |             4 | torch2.3-cu121-py310                                            | /scratch/models/llama-3_1-8b-instruct/bf16
+ gpu-a6000-02 | RTX-A6000      |           48 |           1 |             3 | torch2.3-cu121-py310                                            | /scratch/models/llama-3_1-8b-instruct/bf16
+
+
+== Q2  GPU-hours booked this week vs. weekly quota ==
+         group_name         | quota  | booked | pct_used | reservations | active_users 
+----------------------------+--------+--------+----------+--------------+--------------
+ Computational Genomics Lab |  300.0 |  259.0 |     86.3 |           24 |           10
+ Trustworthy AI Lab         |  800.0 |  596.0 |     74.5 |           32 |           11
+ Robot Perception Lab       |  500.0 |  370.0 |     74.0 |           31 |            9
+ Language Systems Lab       | 1200.0 |  829.0 |     69.1 |           31 |           10
+ Smart Mobility Lab         |  600.0 |  385.0 |     64.2 |           25 |           17
+ Video Understanding Lab    |  900.0 |  564.0 |     62.7 |           30 |           12
+
+
+== Q3  Staged checkpoints unused for 30 days (reclaimable NVMe) ==
+   hostname   | idle_checkpoints | reclaimable_gb |                                                              checkpoints                                                              
+--------------+------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------
+ gpu-a6000-01 |                2 |          95.00 | Qwen2.5-32B-Instruct:bf16, DeepSeek-R1-Distill-Qwen-14B:bf16
+ gpu-a6000-02 |                1 |          65.50 | Qwen2.5-32B-Instruct:bf16
+ gpu-v100-01  |                5 |          52.60 | Qwen2-VL-7B-Instruct:bf16, Mistral-7B-Instruct-v0.3:bf16, Wan2.1-T2V:1.3B, Phi-3.5-mini-instruct:bf16, Llama-3.1-8B-Instruct:awq-int4
+ gpu-a100p-01 |                1 |          39.80 | Llama-3.1-70B-Instruct:awq-int4
+ gpu-debug-01 |                2 |          35.20 | DeepSeek-R1-Distill-Qwen-14B:bf16, Llama-3.1-8B-Instruct:awq-int4
+
+
+== Q4  Researchers who used every bookable GPU type in the last 28 days ==
+   net_id    |    full_name    | user_role 
+-------------+-----------------+-----------
+ cshah727    | Chloe Shah      | PhD
+ dshah326    | Diego Shah      | MS
+ ecohen656   | Dr. Ethan Cohen | Faculty
+ ischmidt081 | Isabel Schmidt  | PhD
+ jschmidt238 | Jun Schmidt     | PhD
+ lkumar504   | Leo Kumar       | Postdoc
+ ltanaka236  | Lucas Tanaka    | MS
+ myamamot092 | Marco Yamamoto  | PhD
+ rchen927    | Ravi Chen       | MS
+ thuang966   | Tomas Huang     | MS
+ wokafor746  | Wei Okafor      | MS
+ zpark341    | Zoe Park        | MS
+
+
+== Q5  Top 3 GPU consumers per group, last 28 days ==
+         group_name         | rnk |   net_id    | gpu_hours | avg_util_pct | fail_pct 
+----------------------------+-----+-------------+-----------+--------------+----------
+ Computational Genomics Lab |   1 | lsingh187   |     239.9 |         59.1 |     26.3
+ Computational Genomics Lab |   2 | frossi796   |     225.5 |         53.7 |     33.3
+ Computational Genomics Lab |   3 | ecohen656   |     136.7 |         47.9 |     36.4
+ Language Systems Lab       |   1 | cshah727    |    1109.6 |         56.1 |     17.5
+ Language Systems Lab       |   2 | iwang299    |     644.2 |         59.5 |     32.1
+ Language Systems Lab       |   3 | ssilva781   |     616.3 |         57.3 |     24.6
+ Robot Perception Lab       |   1 | ischmidt081 |     479.0 |         56.7 |     28.0
+ Robot Perception Lab       |   2 | mmartine667 |     312.9 |         53.7 |     23.5
+ Robot Perception Lab       |   3 | myamamot092 |     167.7 |         60.7 |     13.9
+ Smart Mobility Lab         |   1 | rshah687    |     495.0 |         55.3 |     23.7
+ Smart Mobility Lab         |   2 | tkumar819   |     317.2 |         61.9 |      7.7
+ Smart Mobility Lab         |   3 | ltanaka236  |     288.4 |         52.6 |     13.9
+ Trustworthy AI Lab         |   1 | mkim025     |     740.1 |         55.2 |     15.8
+ Trustworthy AI Lab         |   2 | ecohen656   |     396.7 |         57.9 |     24.5
+ Trustworthy AI Lab         |   3 | zpark341    |     369.7 |         52.0 |     23.7
+ Video Understanding Lab    |   1 | irossi877   |     497.2 |         51.4 |     24.1
+ Video Understanding Lab    |   2 | mwang464    |     329.1 |         60.7 |     18.2
+ Video Understanding Lab    |   3 | gkumar287   |     313.6 |         60.9 |     16.7
+
+
+== Q6  Users with booked-but-idle GPU time (< 30% used), last 28 days ==
+   net_id    |    full_name    | low_use_bookings | booked_gpu_h | used_gpu_h | idle_gpu_h 
+-------------+-----------------+------------------+--------------+------------+------------
+ ischmidt081 | Isabel Schmidt  |                4 |        255.0 |       67.4 |      187.6
+ wokafor746  | Wei Okafor      |                4 |        159.0 |       43.0 |      116.0
+ kcohen864   | Kai Cohen       |                3 |        146.0 |       34.4 |      111.6
+ achen626    | Aisha Chen      |                4 |        102.0 |        6.8 |       95.2
+ lkumar504   | Leo Kumar       |                3 |        114.0 |       23.2 |       90.8
+ ayamamot164 | Amara Yamamoto  |                2 |         88.0 |       15.1 |       72.9
+ igarcia531  | Isabel Garcia   |                2 |         76.0 |       14.0 |       62.0
+ fahmed940   | Fatima Ahmed    |                4 |         58.0 |        6.6 |       51.4
+ ecohen656   | Dr. Ethan Cohen |                2 |         52.0 |        3.0 |       49.1
+ llopez512   | Lucas Lopez     |                3 |         52.0 |        5.8 |       46.2
+
+
+== Q7  Weekly model loads by task category (last 6 weeks) ==
+  week_of   | llm | diffusion | vision | detection | multimodal | audio | jobs 
+------------+-----+-----------+--------+-----------+------------+-------+------
+ 2026-09-28 | 198 |        65 |    159 |       305 |         77 |    92 |  719
+ 2026-10-05 | 102 |        76 |    148 |       328 |         81 |    74 |  657
+ 2026-10-12 | 111 |       105 |    135 |       283 |         63 |    66 |  625
+ 2026-10-19 |  72 |        87 |     96 |       127 |         58 |    40 |  406
+ 2026-10-26 | 139 |        92 |    113 |       304 |         70 |    69 |  654
+ 2026-11-02 |  17 |        10 |     15 |        11 |          1 |     6 |   50
+
+
+== Q8  Earliest 6-hour slot (next 7 days) to run Llama-3.1-8B-Instruct bf16 ==
+   hostname   |     slot_start      |      slot_end       | gpus_needed | free_gpus 
+--------------+---------------------+---------------------+-------------+-----------
+ gpu-a100-03  | 2026-11-02 10:00:00 | 2026-11-02 16:00:00 |           1 |         7
+ gpu-a6000-01 | 2026-11-02 10:00:00 | 2026-11-02 16:00:00 |           1 |         4
+ gpu-a6000-02 | 2026-11-02 10:00:00 | 2026-11-02 16:00:00 |           1 |         3
+
