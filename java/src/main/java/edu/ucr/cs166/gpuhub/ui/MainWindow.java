@@ -12,6 +12,7 @@ import edu.ucr.cs166.gpuhub.ui.screens.JobsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.MembershipsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.ModelsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.NodesPanel;
+import edu.ucr.cs166.gpuhub.ui.screens.QueriesPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.ReservationsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.StagedCopiesPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.UsersPanel;
@@ -62,7 +63,7 @@ public final class MainWindow extends JFrame {
                 .with("Nodes", new NodesPanel())
                 .with("GPU types", new GpuTypesPanel())
                 .with("GPUs", new GpusPanel(clock)));
-        addSection("Queries & Reports", new PlaceholderPanel("Queries & Reports is not built yet."));
+        addSection("Queries & Reports", new QueriesPanel(clock));
 
         add(navigation(), BorderLayout.WEST);
         add(content, BorderLayout.CENTER);

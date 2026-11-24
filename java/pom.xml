@@ -28,6 +28,13 @@
 
   <build>
     <finalName>gpuhub</finalName>
+    <resources>
+      <!-- The app runs the same query files that are submitted: they become /queries/Q1.sql ... -->
+      <resource>
+        <directory>${project.basedir}/../sql/queries</directory>
+        <targetPath>queries</targetPath>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
