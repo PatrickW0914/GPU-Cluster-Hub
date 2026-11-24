@@ -51,7 +51,7 @@ public final class UsersPanel extends EntityPanel<ClusterUser> implements Editor
     @Override
     protected Transactions.Work<Runnable> loadChoices() {
         return c -> {
-            List<Choice<Integer>> groups = GroupsPanel.choices(new GroupDao(c));
+            List<Choice<Integer>> groups = GroupsPanel.choices(new GroupDao(c), null);
             return () -> group.setChoices(groups);
         };
     }
@@ -65,9 +65,9 @@ public final class UsersPanel extends EntityPanel<ClusterUser> implements Editor
         return c -> new UserDao(c).search(searchText, roleValue, groupId, activeValue);
     }
 
-    /** Users as dropdown choices. role may be null. */
-    static List<Choice<Integer>> choices(UserDao users, String role) throws SQLException {
-        return users.search(null, role, null, null).stream()
+    /** Users as dropdown choices. role and active may be null (any). */
+    static List<Choice<Integer>> choices(UserDao users, String role, Boolean active) throws SQLException {
+        return users.search(null, role, null, active).stream()
                 .map(u -> new Choice<>(u.userId(),
                         u.netId() + " - " + u.fullName() + (u.isActive() ? "" : " (inactive)")))
                 .toList();

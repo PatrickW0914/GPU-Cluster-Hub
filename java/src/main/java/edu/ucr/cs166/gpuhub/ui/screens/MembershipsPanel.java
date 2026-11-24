@@ -49,8 +49,8 @@ public final class MembershipsPanel extends EntityPanel<MembershipRow> implement
     @Override
     protected Transactions.Work<Runnable> loadChoices() {
         return c -> {
-            List<Choice<Integer>> users = UsersPanel.choices(new UserDao(c), null);
-            List<Choice<Integer>> groups = GroupsPanel.choices(new GroupDao(c));
+            List<Choice<Integer>> users = UsersPanel.choices(new UserDao(c), null, null);
+            List<Choice<Integer>> groups = GroupsPanel.choices(new GroupDao(c), null);
             return () -> {
                 userChoices = users;
                 groupChoices = groups;

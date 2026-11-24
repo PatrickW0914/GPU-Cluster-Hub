@@ -47,16 +47,23 @@ public final class Messages {
                 "Please check your input", JOptionPane.WARNING_MESSAGE);
     }
 
-    /**
-     * Asks before deleting. Cancel is the default, so pressing Enter does not delete.
-     *
-     * @param warning what else would be deleted, or null
-     */
+    /** Asks before deleting. */
     public static boolean confirmDelete(Component parent, String what, String warning) {
-        String[] options = {"Delete", "Cancel"};
-        int choice = JOptionPane.showOptionDialog(parent, wrappedText("Delete " + what + "?" + (warning == null ? "" : "\n" + warning)),
-                "Confirm delete", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
-                null, options, options[1]);
+        return confirm(parent, "Confirm delete", "Delete " + what + "?", warning, "Delete", "Cancel");
+    }
+
+    /**
+     * Asks before something that cannot be undone. The "no" button is the default, so that
+     * pressing Enter does nothing.
+     *
+     * @param warning what else would be affected, or null
+     */
+    public static boolean confirm(Component parent, String title, String question, String warning,
+                                  String yes, String no) {
+        String[] options = {yes, no};
+        int choice = JOptionPane.showOptionDialog(parent,
+                wrappedText(question + (warning == null ? "" : "\n" + warning)), title,
+                JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
         return choice == 0;
     }
 

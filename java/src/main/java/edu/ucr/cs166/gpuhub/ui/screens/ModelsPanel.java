@@ -60,7 +60,7 @@ public final class ModelsPanel extends EntityPanel<ModelRow> implements Editor<M
     @Override
     protected Transactions.Work<Runnable> loadChoices() {
         return c -> {
-            List<Choice<Integer>> users = UsersPanel.choices(new UserDao(c), null);
+            List<Choice<Integer>> users = UsersPanel.choices(new UserDao(c), null, null);
             List<Choice<Integer>> nodes = NodesPanel.choices(new NodeDao(c));
             List<Choice<Integer>> envs = EnvsPanel.choices(new EnvDao(c));
             return () -> {

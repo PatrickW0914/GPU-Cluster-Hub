@@ -47,6 +47,8 @@ public abstract class EntityPanel<T> extends JPanel {
     private final JButton addButton = new JButton("Add");
     private final JButton editButton = new JButton("Edit");
     private final JButton deleteButton = new JButton("Delete");
+    private final JPanel editButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+    private final List<JButton> rowButtons = new ArrayList<>(List.of(editButton, deleteButton)); // need a selected row
     private final JLabel message = new JLabel(" ");
     private final JLabel rowCount = new JLabel(" ");
 
@@ -69,7 +71,6 @@ public abstract class EntityPanel<T> extends JPanel {
         top.add(filters, BorderLayout.CENTER);
         top.add(searchButtons, BorderLayout.EAST);
 
-        JPanel editButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
         editButtons.add(addButton);
         editButtons.add(editButton);
         editButtons.add(deleteButton);
@@ -217,7 +218,11 @@ public abstract class EntityPanel<T> extends JPanel {
         withChoices(
                 () -> {
                     setBusy(false);
-                    dialog.get().setVisible(true);
+                    try {
+                        dialog.get().setVisible(true);
+                    } catch (InputException e) { // the form refuses to edit this one
+                        Messages.invalidInput(this, e);
+                    }
                 },
                 error -> {
                     setBusy(false);
@@ -245,11 +250,25 @@ public abstract class EntityPanel<T> extends JPanel {
         if (!Messages.confirmDelete(this, name, editor.deleteWarning(entity))) {
             return;
         }
+        runAction(editor.delete(entity), name + " deleted.");
+    }
+
+    /** Adds a button next to Delete that does something with the selected row. */
+    protected final void addRowAction(String label, Consumer<T> action) {
+        JButton button = new JButton(label);
+        button.addActionListener(e -> action.accept(table.selected()));
+        rowButtons.add(button);
+        editButtons.add(button);
+        updateButtons();
+    }
+
+    /** Runs work on the database in the background, then reports the result and reloads the table. */
+    protected final void runAction(Transactions.Work<Boolean> work, String success) {
         setBusy(true);
-        DbTask.run(editor.delete(entity),
+        DbTask.run(work,
                 found -> {
                     setBusy(false);
-                    finished(found, name + " deleted.");
+                    finished(found, success);
                 },
                 error -> {
                     setBusy(false);
@@ -264,7 +283,7 @@ public abstract class EntityPanel<T> extends JPanel {
         if (found) {
             showMessage("✓ " + success, true);
         } else {
-            showMessage("That " + entityName + " no longer exists; the list has been refreshed.", false);
+            showMessage("That " + entityName + " no longer exists or was changed; the list has been refreshed.", false);
         }
         autoSearch();
     }
@@ -282,11 +301,10 @@ public abstract class EntityPanel<T> extends JPanel {
     private void updateButtons() {
         boolean canEdit = editor != null && !busy;
         boolean rowSelected = table.getSelectedRow() >= 0;
-        addButton.setEnabled(canEdit);
-        editButton.setEnabled(canEdit && rowSelected);
-        deleteButton.setEnabled(canEdit && rowSelected);
-        for (JButton button : List.of(addButton, editButton, deleteButton)) {
-            button.setToolTipText(editor == null ? "Not available on this screen yet" : null);
+        addButton.setEnabled(canEdit && editor.canAdd());
+        addButton.setToolTipText(editor == null ? null : editor.addHint());
+        for (JButton button : rowButtons) {
+            button.setEnabled(canEdit && rowSelected);
         }
     }
 }

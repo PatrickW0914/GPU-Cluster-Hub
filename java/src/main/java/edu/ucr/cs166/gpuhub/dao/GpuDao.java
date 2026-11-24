@@ -2,6 +2,7 @@ package edu.ucr.cs166.gpuhub.dao;
 
 import edu.ucr.cs166.gpuhub.entity.Gpu;
 import edu.ucr.cs166.gpuhub.entity.GpuRow;
+import edu.ucr.cs166.gpuhub.entity.GpuSlot;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -68,6 +69,35 @@ public final class GpuDao extends Dao {
         }
         return queryAll(SELECT_ROW + f.where() + " ORDER BY n.hostname, g.slot_index",
                 GpuDao::readRow, f.params());
+    }
+
+    /**
+     * All GPUs of a node, each with the reservation (if any) that already has it at some time
+     * between start and end. Uses the same overlap test as the GH001 trigger.
+     */
+    public List<GpuSlot> slots(int nodeId, LocalDateTime start, LocalDateTime end) throws SQLException {
+        return queryAll("""
+                SELECT g.gpu_id, g.node_id, g.slot_index, g.gpu_type_id,
+                       g.serial_number, g.gpu_status, g.installed_on,
+                       n.hostname, n.node_status, t.type_name, t.vram_gb,
+                       (SELECT MIN(r.reservation_id)
+                          FROM reservation_gpu rg
+                          JOIN reservation r ON r.reservation_id = rg.reservation_id
+                         WHERE rg.gpu_id = g.gpu_id AND r.res_status <> 'CANCELLED'
+                           AND tsrange(r.start_time, r.end_time) && tsrange(?::timestamp, ?::timestamp)
+                       ) AS booked_by
+                  FROM gpu g
+                  JOIN compute_node n ON n.node_id = g.node_id
+                  JOIN gpu_type t     ON t.gpu_type_id = g.gpu_type_id
+                 WHERE g.node_id = ?
+                 ORDER BY g.slot_index""",
+                rs -> new GpuSlot(readRow(rs), rs.getObject("booked_by", Integer.class)),
+                start, end, nodeId);
+    }
+
+    /** Makes other transactions that want to lock this GPU wait until this transaction ends. */
+    public void lock(int gpuId) throws SQLException {
+        queryOne("SELECT gpu_id FROM gpu WHERE gpu_id = ? FOR UPDATE", rs -> rs.getInt(1), gpuId);
     }
 
     /** Returns false if the GPU no longer exists. */

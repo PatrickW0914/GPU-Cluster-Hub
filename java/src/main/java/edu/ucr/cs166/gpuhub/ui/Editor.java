@@ -8,7 +8,10 @@ import edu.ucr.cs166.gpuhub.db.Transactions;
  */
 public interface Editor<T> {
 
-    /** The form to fill in: empty for a new object (existing is null), otherwise with its values. */
+    /**
+     * The form to fill in: empty for a new object (existing is null), otherwise with its values.
+     * Throws InputException if this object cannot be edited.
+     */
     EntityForm<T> form(T existing);
 
     Transactions.Work<Boolean> insert(T entity);
@@ -19,6 +22,15 @@ public interface Editor<T> {
 
     /** A short name for messages, such as the hostname. */
     String nameOf(T entity);
+
+    /** False if new objects are created somewhere else; addHint() then says where. */
+    default boolean canAdd() {
+        return true;
+    }
+
+    default String addHint() {
+        return null;
+    }
 
     /** What else deleting it removes (by cascade), to show in the confirmation; null if nothing. */
     default String deleteWarning(T entity) {

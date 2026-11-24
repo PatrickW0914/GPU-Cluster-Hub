@@ -50,7 +50,7 @@ public final class GroupsPanel extends EntityPanel<GroupRow> implements Editor<G
     @Override
     protected Transactions.Work<Runnable> loadChoices() {
         return c -> {
-            List<Choice<Integer>> faculty = UsersPanel.choices(new UserDao(c), "Faculty");
+            List<Choice<Integer>> faculty = UsersPanel.choices(new UserDao(c), "Faculty", null);
             return () -> facultyChoices = faculty;
         };
     }
@@ -63,9 +63,9 @@ public final class GroupsPanel extends EntityPanel<GroupRow> implements Editor<G
         return c -> new GroupDao(c).search(nameText, departmentText, memberText, null);
     }
 
-    /** All groups as dropdown choices. */
-    static List<Choice<Integer>> choices(GroupDao groups) throws SQLException {
-        return groups.search(null, null, null, null).stream()
+    /** Groups as dropdown choices: all of them, or only those of one member. */
+    static List<Choice<Integer>> choices(GroupDao groups, Integer memberUserId) throws SQLException {
+        return groups.search(null, null, null, memberUserId).stream()
                 .map(r -> new Choice<>(r.group().groupId(), r.group().groupName()))
                 .toList();
     }

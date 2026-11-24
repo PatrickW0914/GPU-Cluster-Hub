@@ -24,6 +24,7 @@ import edu.ucr.cs166.gpuhub.entity.ComputeNode;
 import edu.ucr.cs166.gpuhub.entity.EnvRow;
 import edu.ucr.cs166.gpuhub.entity.Gpu;
 import edu.ucr.cs166.gpuhub.entity.GpuRow;
+import edu.ucr.cs166.gpuhub.entity.GpuSlot;
 import edu.ucr.cs166.gpuhub.entity.GpuType;
 import edu.ucr.cs166.gpuhub.entity.GpuTypeRow;
 import edu.ucr.cs166.gpuhub.entity.GroupRow;
@@ -38,11 +39,13 @@ import edu.ucr.cs166.gpuhub.entity.ModelVersion;
 import edu.ucr.cs166.gpuhub.entity.NodeRow;
 import edu.ucr.cs166.gpuhub.entity.ResearchGroup;
 import edu.ucr.cs166.gpuhub.entity.Reservation;
+import edu.ucr.cs166.gpuhub.entity.ReservationRow;
 import edu.ucr.cs166.gpuhub.entity.SoftwareEnv;
 import edu.ucr.cs166.gpuhub.entity.StagedCopy;
 import edu.ucr.cs166.gpuhub.entity.StagedCopyRow;
 import edu.ucr.cs166.gpuhub.entity.VersionKey;
 import edu.ucr.cs166.gpuhub.entity.VersionRow;
+import edu.ucr.cs166.gpuhub.entity.WeekUsage;
 import edu.ucr.cs166.gpuhub.service.GroupService;
 
 import java.math.BigDecimal;
@@ -249,8 +252,8 @@ public final class DaoTestMain {
         Reservation res = new Reservation(resId, userId, groupId, start, end, "test", "PENDING", now);
         check("ReservationDao insert + addGpu", res.equals(reservations.findById(resId).orElseThrow())
                 && reservations.gpuIds(resId).equals(List.of(gpuId)));
-        res = new Reservation(resId, userId, groupId, start.plusHours(1), end.plusHours(1), "moved", "CONFIRMED", now);
-        check("ReservationDao update", reservations.update(res) && res.equals(reservations.findById(resId).orElseThrow()));
+        res = new Reservation(resId, userId, groupId, start.plusHours(1), end.plusHours(1), "moved", "PENDING", now);
+        check("ReservationDao updateTimes", reservations.updateTimes(res) && res.equals(reservations.findById(resId).orElseThrow()));
 
         long jobId = jobs.insert(new Job(0, resId, envId, "zz-job", start, null, null, "QUEUED", null, null, null));
         Job job = new Job(jobId, resId, envId, "zz-job", start, null, null, "QUEUED", null, null, null);
@@ -311,9 +314,18 @@ public final class DaoTestMain {
         check("JobLoadDao search",
                 loads.search((int) jobId, "zztest2", key, "fine-tune").equals(List.of(load)));
         // The reservation is 11:00-15:00. One that only touches its end does not overlap it.
-        check("ReservationDao search", reservations.search(userId, groupId, gpuId, "CONFIRMED", start.plusHours(4), start.plusHours(9)).equals(List.of(res))
-                && reservations.search(userId, null, null, null, start.plusHours(5), null).isEmpty()
-                && reservations.search(userId, null, null, null, null, start.plusHours(1)).isEmpty());
+        ReservationRow resRow = new ReservationRow(res, "zztest2", "ZZ Test Group 2", 1, new BigDecimal("4.0"),
+                "zz-test-02: GPU " + gpuId, 0);
+        check("ReservationDao search (joins names and GPUs)",
+                reservations.search("zztest2", groupId, nodeId, "PENDING", start.plusHours(4), start.plusHours(9))
+                        .equals(List.of(resRow))
+                && reservations.search("zztest2", null, null, null, start.plusHours(5), null).isEmpty()
+                && reservations.search("zztest2", null, null, null, null, start.plusHours(1)).isEmpty());
+        WeekUsage week = reservations.weekUsage(groupId, start).orElseThrow();
+        check("ReservationDao weekUsage", week.equals(new WeekUsage("ZZ Test Group 2", new BigDecimal("4.0"), new BigDecimal("250.5")))
+                && reservations.weekUsage(groupId, start.plusDays(7)).orElseThrow().booked().signum() == 0);
+        check("GpuDao slots", gpus.slots(nodeId, start.plusHours(4), start.plusHours(6)).equals(List.of(new GpuSlot(gpuRows.get(0), resId)))
+                && gpus.slots(nodeId, start.plusHours(5), start.plusHours(6)).equals(List.of(new GpuSlot(gpuRows.get(0), null))));
         check("JobDao search", jobs.search("zz-", "COMPLETED", resId, "zztest2", envId, key).equals(
                 List.of(new JobRow(job, "zztest2", "zz-test-env-2", 1, "ZZ-Test-Model-2:v1-renamed"))));
 

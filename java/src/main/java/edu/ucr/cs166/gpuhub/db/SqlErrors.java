@@ -47,6 +47,7 @@ public final class SqlErrors {
             case "GH006" -> "That model version isn't verified for this environment.";
             case "GH007" -> "Not enough NVMe space on that node.";
             case "GH008" -> "A group's PI must be a Faculty user.";
+            case "40P01" -> "Someone else was changing the same data at that moment. Please try again.";
             default -> "Unexpected database error (code " + (state.isEmpty() ? "unknown" : state) + ").";
         };
     }

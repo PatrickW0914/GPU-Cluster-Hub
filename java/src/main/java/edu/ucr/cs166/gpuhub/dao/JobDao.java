@@ -86,6 +86,32 @@ public final class JobDao extends Dao {
                 j.jobId()) == 1;
     }
 
+    /** How many of the reservation's jobs are not inside its times (the GH005 rule). */
+    public int countOutsideReservation(int reservationId) throws SQLException {
+        return queryOne("""
+                SELECT COUNT(*)
+                  FROM job j JOIN reservation r ON r.reservation_id = j.reservation_id
+                 WHERE r.reservation_id = ?
+                   AND (j.start_time < r.start_time OR j.start_time >= r.end_time OR j.end_time > r.end_time)""",
+                rs -> rs.getInt(1), reservationId).orElseThrow();
+    }
+
+    /**
+     * Cancels the reservation's queued and running jobs. A running job ends now, but not before
+     * it started and not after the reservation ends. Returns how many were cancelled.
+     */
+    public int cancelUnfinished(int reservationId, LocalDateTime now) throws SQLException {
+        return execute("""
+                UPDATE job j
+                   SET job_state = 'CANCELLED',
+                       end_time = CASE WHEN j.start_time IS NOT NULL
+                                       THEN GREATEST(j.start_time, LEAST(?::timestamp, r.end_time)) END
+                  FROM reservation r
+                 WHERE r.reservation_id = j.reservation_id
+                   AND j.reservation_id = ? AND j.job_state IN ('QUEUED', 'RUNNING')""",
+                now, reservationId);
+    }
+
     /** Deletes the job and (by cascade) its model loads. Returns false if it no longer exists. */
     public boolean delete(long jobId) throws SQLException {
         return execute("DELETE FROM job WHERE job_id = ?", jobId) == 1;

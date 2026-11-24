@@ -1,6 +1,7 @@
 package edu.ucr.cs166.gpuhub.ui;
 
 import edu.ucr.cs166.gpuhub.service.AppClock;
+import edu.ucr.cs166.gpuhub.ui.screens.BookingPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.CompatibilityPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.EnvsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.GpuTypesPanel;
@@ -48,9 +49,9 @@ public final class MainWindow extends JFrame {
                 .with("Environments", new EnvsPanel())
                 .with("Compatibility", new CompatibilityPanel(clock))
                 .with("Staged copies", new StagedCopiesPanel(clock)));
-        addSection("GPU Booking", new PlaceholderPanel("GPU Booking is not built yet."));
+        addSection("GPU Booking", new BookingPanel(clock));
         addSection("Reservations & Jobs", tabs()
-                .with("Reservations", new ReservationsPanel())
+                .with("Reservations", new ReservationsPanel(clock))
                 .with("Jobs", new JobsPanel(clock))
                 .with("Model loads", new JobLoadsPanel()));
         addSection("Groups & Users", tabs()
