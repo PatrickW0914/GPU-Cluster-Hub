@@ -14,7 +14,7 @@
     <!-- "release" makes the output run on Java 17 even if Maven runs on a newer JDK -->
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <main.class>edu.ucr.cs166.gpuhub.SmokeTest</main.class>
+    <main.class>edu.ucr.cs166.gpuhub.Main</main.class>
   </properties>
 
   <dependencies>
