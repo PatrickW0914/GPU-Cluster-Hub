@@ -29,6 +29,19 @@ final class Filter {
         return this;
     }
 
+    /**
+     * For a condition with two different values, such as a composite key. It is added if
+     * there is a first value.
+     */
+    Filter andPair(String condition, Object first, Object second) {
+        if (first != null) {
+            where.append(where.isEmpty() ? " WHERE " : " AND ").append(condition);
+            params.add(first);
+            params.add(second);
+        }
+        return this;
+    }
+
     /** Like {@link #and}, for conditions of the form "column ILIKE ?" (text contained, any case). */
     Filter andContains(String condition, String text) {
         if (text == null || text.isBlank()) {

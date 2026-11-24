@@ -24,4 +24,6 @@ public final class Allowed {
             List.of("PENDING", "CONFIRMED", "ACTIVE", "COMPLETED", "CANCELLED");
     public static final List<String> JOB_STATES =
             List.of("QUEUED", "RUNNING", "COMPLETED", "FAILED", "CANCELLED", "TIMEOUT");
+    public static final List<String> USAGE_ROLES =
+            List.of("inference", "fine-tune", "pretrain", "evaluation", "attack", "distillation");
 }

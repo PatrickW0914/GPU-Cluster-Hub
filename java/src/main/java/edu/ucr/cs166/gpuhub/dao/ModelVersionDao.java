@@ -1,6 +1,7 @@
 package edu.ucr.cs166.gpuhub.dao;
 
 import edu.ucr.cs166.gpuhub.entity.ModelVersion;
+import edu.ucr.cs166.gpuhub.entity.VersionRow;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -17,6 +18,18 @@ public final class ModelVersionDao extends Dao {
             SELECT v.model_id, v.version_tag, v.param_count_b, v.weight_precision,
                    v.min_vram_gb, v.checkpoint_size_gb, v.released_on, v.is_deprecated
               FROM model_version v""";
+
+    /** For lists: adds the model's name and how many nodes and environments have the version. */
+    private static final String SELECT_ROW = """
+            SELECT v.model_id, v.version_tag, v.param_count_b, v.weight_precision,
+                   v.min_vram_gb, v.checkpoint_size_gb, v.released_on, v.is_deprecated,
+                   m.model_name,
+                   (SELECT COUNT(*) FROM node_hosts_version h
+                     WHERE (h.model_id, h.version_tag) = (v.model_id, v.version_tag)) AS node_count,
+                   (SELECT COUNT(*) FROM env_supports_version s
+                     WHERE (s.model_id, s.version_tag) = (v.model_id, v.version_tag)) AS env_count
+              FROM model_version v
+              JOIN ai_model m ON m.model_id = v.model_id""";
 
     public ModelVersionDao(Connection c) {
         super(c);
@@ -37,16 +50,27 @@ public final class ModelVersionDao extends Dao {
                 ModelVersionDao::read, modelId, versionTag);
     }
 
-    /** Every filter may be null. maxVramGb finds the versions that fit in that much VRAM. */
-    public List<ModelVersion> search(Integer modelId, String precision, BigDecimal maxVramGb, Boolean deprecated)
-            throws SQLException {
+    /**
+     * Every filter may be null. maxVramGb finds the versions that fit in that much VRAM,
+     * nodeId the ones staged on that node, envId the ones verified for that environment.
+     */
+    public List<VersionRow> search(Integer modelId, String precision, BigDecimal maxVramGb, Boolean deprecated,
+                                   Integer nodeId, Integer envId) throws SQLException {
         Filter f = new Filter()
                 .and("v.model_id = ?", modelId)
                 .and("v.weight_precision = ?", precision)
                 .and("v.min_vram_gb <= ?", maxVramGb)
-                .and("v.is_deprecated = ?", deprecated);
-        return queryAll(SELECT + f.where() + " ORDER BY v.model_id, v.version_tag",
-                ModelVersionDao::read, f.params());
+                .and("v.is_deprecated = ?", deprecated)
+                .and("""
+                        EXISTS (SELECT 1 FROM node_hosts_version h
+                                 WHERE (h.model_id, h.version_tag) = (v.model_id, v.version_tag)
+                                   AND h.node_id = ?)""", nodeId)
+                .and("""
+                        EXISTS (SELECT 1 FROM env_supports_version s
+                                 WHERE (s.model_id, s.version_tag) = (v.model_id, v.version_tag)
+                                   AND s.env_id = ?)""", envId);
+        return queryAll(SELECT_ROW + f.where() + " ORDER BY m.model_name, v.version_tag",
+                ModelVersionDao::readRow, f.params());
     }
 
     /**
@@ -69,6 +93,10 @@ public final class ModelVersionDao extends Dao {
     public boolean delete(int modelId, String versionTag) throws SQLException {
         return execute("DELETE FROM model_version WHERE model_id = ? AND version_tag = ?",
                 modelId, versionTag) == 1;
+    }
+
+    private static VersionRow readRow(ResultSet rs) throws SQLException {
+        return new VersionRow(read(rs), rs.getString("model_name"), rs.getInt("node_count"), rs.getInt("env_count"));
     }
 
     private static ModelVersion read(ResultSet rs) throws SQLException {

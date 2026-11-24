@@ -8,6 +8,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /** The dialogs used by every screen. */
 public final class Messages {
@@ -17,13 +19,26 @@ public final class Messages {
 
     private Messages() { }
 
-    /** A database error: the friendly message in bold, the database's own text below it. */
     public static void databaseError(Component parent, SQLException e) {
+        databaseError(parent, e, null);
+    }
+
+    /**
+     * A database error: the friendly message in bold, then what the user can do about it
+     * (may be null), then the database's own text in gray.
+     */
+    public static void databaseError(Component parent, SQLException e, String hint) {
+        List<JTextArea> lines = new ArrayList<>();
         JTextArea message = wrappedText(SqlErrors.message(e));
         message.setFont(message.getFont().deriveFont(Font.BOLD));
+        lines.add(message);
+        if (hint != null) {
+            lines.add(wrappedText(hint));
+        }
         JTextArea detail = wrappedText(SqlErrors.detail(e));
-        JOptionPane.showMessageDialog(parent, new Object[] {message, detail},
-                "Database error", JOptionPane.ERROR_MESSAGE);
+        detail.setForeground(Color.GRAY);
+        lines.add(detail);
+        JOptionPane.showMessageDialog(parent, lines.toArray(), "Database error", JOptionPane.ERROR_MESSAGE);
     }
 
     /** Input that was rejected before reaching the database. */
@@ -32,10 +47,14 @@ public final class Messages {
                 "Please check your input", JOptionPane.WARNING_MESSAGE);
     }
 
-    /** Asks before deleting. Cancel is the default, so pressing Enter does not delete. */
-    public static boolean confirmDelete(Component parent, String what) {
+    /**
+     * Asks before deleting. Cancel is the default, so pressing Enter does not delete.
+     *
+     * @param warning what else would be deleted, or null
+     */
+    public static boolean confirmDelete(Component parent, String what, String warning) {
         String[] options = {"Delete", "Cancel"};
-        int choice = JOptionPane.showOptionDialog(parent, wrappedText("Delete " + what + "?"),
+        int choice = JOptionPane.showOptionDialog(parent, wrappedText("Delete " + what + "?" + (warning == null ? "" : "\n" + warning)),
                 "Confirm delete", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
                 null, options, options[1]);
         return choice == 0;

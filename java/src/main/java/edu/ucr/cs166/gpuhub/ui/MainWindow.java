@@ -1,15 +1,18 @@
 package edu.ucr.cs166.gpuhub.ui;
 
 import edu.ucr.cs166.gpuhub.service.AppClock;
+import edu.ucr.cs166.gpuhub.ui.screens.CompatibilityPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.EnvsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.GpuTypesPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.GpusPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.GroupsPanel;
+import edu.ucr.cs166.gpuhub.ui.screens.JobLoadsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.JobsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.MembershipsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.ModelsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.NodesPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.ReservationsPanel;
+import edu.ucr.cs166.gpuhub.ui.screens.StagedCopiesPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.UsersPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.VersionsPanel;
 
@@ -42,11 +45,14 @@ public final class MainWindow extends JFrame {
         addSection("Catalog", tabs()
                 .with("Models", new ModelsPanel())
                 .with("Model versions", new VersionsPanel())
-                .with("Environments", new EnvsPanel()));
+                .with("Environments", new EnvsPanel())
+                .with("Compatibility", new CompatibilityPanel(clock))
+                .with("Staged copies", new StagedCopiesPanel(clock)));
         addSection("GPU Booking", new PlaceholderPanel("GPU Booking is not built yet."));
         addSection("Reservations & Jobs", tabs()
                 .with("Reservations", new ReservationsPanel())
-                .with("Jobs", new JobsPanel()));
+                .with("Jobs", new JobsPanel(clock))
+                .with("Model loads", new JobLoadsPanel()));
         addSection("Groups & Users", tabs()
                 .with("Users", new UsersPanel())
                 .with("Research groups", new GroupsPanel())
@@ -54,7 +60,7 @@ public final class MainWindow extends JFrame {
         addSection("Inventory (admin)", tabs()
                 .with("Nodes", new NodesPanel())
                 .with("GPU types", new GpuTypesPanel())
-                .with("GPUs", new GpusPanel()));
+                .with("GPUs", new GpusPanel(clock)));
         addSection("Queries & Reports", new PlaceholderPanel("Queries & Reports is not built yet."));
 
         add(navigation(), BorderLayout.WEST);

@@ -1,29 +1,48 @@
 package edu.ucr.cs166.gpuhub;
 
+import edu.ucr.cs166.gpuhub.dao.CompatibilityDao;
 import edu.ucr.cs166.gpuhub.dao.EnvDao;
 import edu.ucr.cs166.gpuhub.dao.GpuDao;
 import edu.ucr.cs166.gpuhub.dao.GpuTypeDao;
 import edu.ucr.cs166.gpuhub.dao.GroupDao;
 import edu.ucr.cs166.gpuhub.dao.JobDao;
+import edu.ucr.cs166.gpuhub.dao.JobLoadDao;
 import edu.ucr.cs166.gpuhub.dao.ModelDao;
 import edu.ucr.cs166.gpuhub.dao.ModelVersionDao;
 import edu.ucr.cs166.gpuhub.dao.NodeDao;
 import edu.ucr.cs166.gpuhub.dao.ReservationDao;
+import edu.ucr.cs166.gpuhub.dao.StagedCopyDao;
 import edu.ucr.cs166.gpuhub.dao.UserDao;
 import edu.ucr.cs166.gpuhub.db.Database;
 import edu.ucr.cs166.gpuhub.db.SqlErrors;
 import edu.ucr.cs166.gpuhub.db.Transactions;
 import edu.ucr.cs166.gpuhub.entity.AiModel;
 import edu.ucr.cs166.gpuhub.entity.ClusterUser;
+import edu.ucr.cs166.gpuhub.entity.Compatibility;
+import edu.ucr.cs166.gpuhub.entity.CompatibilityRow;
 import edu.ucr.cs166.gpuhub.entity.ComputeNode;
+import edu.ucr.cs166.gpuhub.entity.EnvRow;
 import edu.ucr.cs166.gpuhub.entity.Gpu;
+import edu.ucr.cs166.gpuhub.entity.GpuRow;
 import edu.ucr.cs166.gpuhub.entity.GpuType;
+import edu.ucr.cs166.gpuhub.entity.GpuTypeRow;
+import edu.ucr.cs166.gpuhub.entity.GroupRow;
 import edu.ucr.cs166.gpuhub.entity.Job;
+import edu.ucr.cs166.gpuhub.entity.JobLoad;
+import edu.ucr.cs166.gpuhub.entity.JobLoadRow;
+import edu.ucr.cs166.gpuhub.entity.JobRow;
 import edu.ucr.cs166.gpuhub.entity.Membership;
+import edu.ucr.cs166.gpuhub.entity.MembershipRow;
+import edu.ucr.cs166.gpuhub.entity.ModelRow;
 import edu.ucr.cs166.gpuhub.entity.ModelVersion;
-import edu.ucr.cs166.gpuhub.entity.Reservation;
+import edu.ucr.cs166.gpuhub.entity.NodeRow;
 import edu.ucr.cs166.gpuhub.entity.ResearchGroup;
+import edu.ucr.cs166.gpuhub.entity.Reservation;
 import edu.ucr.cs166.gpuhub.entity.SoftwareEnv;
+import edu.ucr.cs166.gpuhub.entity.StagedCopy;
+import edu.ucr.cs166.gpuhub.entity.StagedCopyRow;
+import edu.ucr.cs166.gpuhub.entity.VersionKey;
+import edu.ucr.cs166.gpuhub.entity.VersionRow;
 import edu.ucr.cs166.gpuhub.service.GroupService;
 
 import java.math.BigDecimal;
@@ -122,21 +141,27 @@ public final class DaoTestMain {
         EnvDao envs = new EnvDao(c);
         ReservationDao reservations = new ReservationDao(c);
         JobDao jobs = new JobDao(c);
+        CompatibilityDao compats = new CompatibilityDao(c);
+        StagedCopyDao copies = new StagedCopyDao(c);
+        JobLoadDao loads = new JobLoadDao(c);
 
         // An unfiltered search reads every existing row, so it also tests reading real data.
         Map<String, Long> counts = rowCounts();
         check("unfiltered searches return every row",
                 users.search(null, null, null, null).size() == counts.get("cluster_user")
-                && groups.search(null, null, null).size() == counts.get("research_group")
+                && groups.search(null, null, null, null).size() == counts.get("research_group")
                 && groups.searchMembers(null, null, null).size() == counts.get("membership")
-                && nodes.search(null, null, null, null).size() == counts.get("compute_node")
-                && types.search(null, null, null, null).size() == counts.get("gpu_type")
-                && gpus.search(null, null, null, null).size() == counts.get("gpu")
-                && models.search(null, null, null, null).size() == counts.get("ai_model")
-                && versions.search(null, null, null, null).size() == counts.get("model_version")
-                && envs.search(null, null, null).size() == counts.get("software_env")
+                && nodes.search(null, null, null, null, null).size() == counts.get("compute_node")
+                && types.search(null, null, null, null, null).size() == counts.get("gpu_type")
+                && gpus.search(null, null, null, null, null, null).size() == counts.get("gpu")
+                && models.search(null, null, null, null, null, null).size() == counts.get("ai_model")
+                && versions.search(null, null, null, null, null, null).size() == counts.get("model_version")
+                && envs.search(null, null, null, null).size() == counts.get("software_env")
                 && reservations.search(null, null, null, null, null, null).size() == counts.get("reservation")
-                && jobs.search(null, null, null, null, null).size() == counts.get("job"));
+                && jobs.search(null, null, null, null, null, null).size() == counts.get("job")
+                && compats.search(null, null, null).size() == counts.get("env_supports_version")
+                && copies.search(null, null, null, null).size() == counts.get("node_hosts_version")
+                && loads.search(null, null, null, null).size() == counts.get("job_loads_version"));
 
         // ---- insert + find, then update + find. Columns filled by the database
         // ---- (created_at ...) are copied from the row that was found.
@@ -198,6 +223,24 @@ public final class DaoTestMain {
         env = new SoftwareEnv(envId, "zz-test-env-2", "3.12", new BigDecimal("12.4"), "JAX", "0.4", null, env.createdOn());
         check("EnvDao update", envs.update(env) && env.equals(envs.findById(envId).orElseThrow()));
 
+        compats.insert(new Compatibility(envId, modelId, "v1-renamed", installed, "first"));
+        check("CompatibilityDao insert", compats.findById(envId, modelId, "v1-renamed").orElseThrow().compatibility()
+                .equals(new Compatibility(envId, modelId, "v1-renamed", installed, "first")));
+        CompatibilityRow compat = new CompatibilityRow(
+                new Compatibility(envId, modelId, "v1-renamed", installed.plusDays(1), null),
+                "zz-test-env-2", new BigDecimal("12.4"), "ZZ-Test-Model-2");
+        check("CompatibilityDao update", compats.update(compat.compatibility())
+                && compat.equals(compats.findById(envId, modelId, "v1-renamed").orElseThrow()));
+
+        copies.insert(new StagedCopy(nodeId, modelId, "v1-renamed", "/zz/1", installed));
+        check("StagedCopyDao insert", copies.findById(nodeId, modelId, "v1-renamed").orElseThrow().copy()
+                .equals(new StagedCopy(nodeId, modelId, "v1-renamed", "/zz/1", installed)));
+        StagedCopyRow copy = new StagedCopyRow(
+                new StagedCopy(nodeId, modelId, "v1-renamed", "/zz/2", installed.plusDays(1)),
+                "zz-test-02", "ZZ-Test-Model-2", "Vision", new BigDecimal("8.25"));
+        check("StagedCopyDao update", copies.update(copy.copy())
+                && copy.equals(copies.findById(nodeId, modelId, "v1-renamed").orElseThrow()));
+
         LocalDateTime now = LocalDateTime.of(2026, 11, 2, 9, 0); // the demo clock
         LocalDateTime start = LocalDateTime.of(2026, 11, 2, 10, 0);
         LocalDateTime end = start.plusHours(4);
@@ -215,6 +258,14 @@ public final class DaoTestMain {
         job = new Job(jobId, resId, envId, "zz-job-2", start, start.plusHours(1), start.plusHours(2), "COMPLETED", 0, new BigDecimal("12.5"), new BigDecimal("88.25"));
         check("JobDao update", jobs.update(job) && job.equals(jobs.findById(jobId).orElseThrow()));
 
+        loads.insert(new JobLoad(jobId, modelId, "v1-renamed", "inference"));
+        check("JobLoadDao insert", loads.findById(jobId, modelId, "v1-renamed").orElseThrow().load()
+                .equals(new JobLoad(jobId, modelId, "v1-renamed", "inference")));
+        JobLoadRow load = new JobLoadRow(new JobLoad(jobId, modelId, "v1-renamed", "fine-tune"),
+                "zz-job-2", "zztest2", "zz-test-env-2", "ZZ-Test-Model-2");
+        check("JobLoadDao update", loads.update(load.load())
+                && load.equals(loads.findById(jobId, modelId, "v1-renamed").orElseThrow()));
+
         // Check the deferred rules now, as COMMIT would: the chain must satisfy them.
         setConstraints(c, "IMMEDIATE");
         setConstraints(c, "DEFERRED");
@@ -225,22 +276,52 @@ public final class DaoTestMain {
         check("UserDao search treats _ literally", users.search("test_two", null, null, null).equals(List.of(user))
                 && users.search("t_st_two", null, null, null).isEmpty()); // would match if _ were a wildcard
         check("UserDao search binds quotes safely", users.search("' OR '1'='1", null, null, null).isEmpty());
-        check("GroupDao search", groups.search("zz test", "testing", userId).equals(List.of(group)));
-        check("GroupDao membership search", groups.searchMembers(userId, groupId, "Manager").equals(List.of(member)));
-        check("NodeDao search", nodes.search("zz-", "debug", "UP", typeId).equals(List.of(node)));
-        check("GpuTypeDao search", types.search("zz-", "AMD", 48, false).equals(List.of(type)));
-        check("GpuDao search", gpus.search(nodeId, typeId, "AVAILABLE", "zzserial").equals(List.of(gpu)));
-        check("ModelDao search", models.search("zz-", "Vision", "JAX", userId).equals(List.of(model)));
-        check("ModelVersionDao search", versions.search(modelId, "int8", new BigDecimal("9"), true).equals(List.of(version))
-                && versions.search(modelId, null, new BigDecimal("8.9"), null).isEmpty());
-        check("EnvDao search", envs.search("zz-", "JAX", new BigDecimal("12.4")).equals(List.of(env)));
+        GroupRow groupRow = new GroupRow(group, "Test_Two", 1);
+        check("GroupDao search (joins PI name and member count)",
+                groups.search("zz test", "testing", "zztest2", userId).equals(List.of(groupRow))
+                && groups.search("zz test", null, "nobody", null).isEmpty());
+        check("GroupDao membership search (joins names)", groups.searchMembers("test_two", groupId, "Manager")
+                .equals(List.of(new MembershipRow(member, "zztest2", "Test_Two", "ZZ Test Group 2", true))));
+        VersionKey key = new VersionKey(modelId, "v1-renamed");
+        NodeRow nodeRow = new NodeRow(node, 1, "ZZ-Test-GPU-2", 1, new BigDecimal("8.25"));
+        check("NodeDao search (joins GPUs and staged size)",
+                nodes.search("zz-", "debug", "UP", typeId, key).equals(List.of(nodeRow))
+                && nodes.search(null, null, null, null, new VersionKey(modelId, "other")).isEmpty());
+        check("GpuTypeDao search", types.search("zz-", "AMD", 48, false, nodeId).equals(List.of(new GpuTypeRow(type, 1))));
+        List<GpuRow> gpuRows = List.of(new GpuRow(gpu, "zz-test-02", "UP", "ZZ-Test-GPU-2", 48));
+        check("GpuDao search (joins node and type)",
+                gpus.search(nodeId, typeId, "AVAILABLE", "zzserial", null, null).equals(gpuRows));
+        // The reservation is 11:00-15:00: booked at 11:00, free again at 15:00.
+        check("GpuDao search booked / free at a time",
+                gpus.search(nodeId, null, null, null, true, start.plusHours(1)).equals(gpuRows)
+                && gpus.search(nodeId, null, null, null, false, start.plusHours(1)).isEmpty()
+                && gpus.search(nodeId, null, null, null, true, start.plusHours(5)).isEmpty()
+                && gpus.search(nodeId, null, null, null, false, start.plusHours(5)).equals(gpuRows));
+        check("ModelDao search", models.search("zz-", "Vision", "JAX", userId, nodeId, envId)
+                .equals(List.of(new ModelRow(model, "Test_Two", 1))));
+        check("ModelVersionDao search", versions.search(modelId, "int8", new BigDecimal("9"), true, nodeId, envId)
+                .equals(List.of(new VersionRow(version, "ZZ-Test-Model-2", 1, 1)))
+                && versions.search(modelId, null, new BigDecimal("8.9"), null, null, null).isEmpty());
+        // The node's driver supports CUDA 12.1 and the environment needs 12.4, so it cannot run there.
+        check("EnvDao search", envs.search("zz-", "JAX", null, key).equals(List.of(new EnvRow(env, 1)))
+                && envs.search("zz-", null, nodeId, null).isEmpty());
+        check("CompatibilityDao search", compats.search(envId, key, null).equals(List.of(compat))
+                && compats.search(envId, null, nodeId).isEmpty());
+        check("StagedCopyDao search", copies.search(nodeId, key, "Vision", "/ZZ").equals(List.of(copy)));
+        check("JobLoadDao search",
+                loads.search((int) jobId, "zztest2", key, "fine-tune").equals(List.of(load)));
         // The reservation is 11:00-15:00. One that only touches its end does not overlap it.
         check("ReservationDao search", reservations.search(userId, groupId, gpuId, "CONFIRMED", start.plusHours(4), start.plusHours(9)).equals(List.of(res))
                 && reservations.search(userId, null, null, null, start.plusHours(5), null).isEmpty()
                 && reservations.search(userId, null, null, null, null, start.plusHours(1)).isEmpty());
-        check("JobDao search", jobs.search("zz-", "COMPLETED", resId, userId, envId).equals(List.of(job)));
+        check("JobDao search", jobs.search("zz-", "COMPLETED", resId, "zztest2", envId, key).equals(
+                List.of(new JobRow(job, "zztest2", "zz-test-env-2", 1, "ZZ-Test-Model-2:v1-renamed"))));
 
         // ---- delete, dependents first
+        check("JobLoadDao delete", loads.delete(load.load()) && loads.findById(jobId, modelId, "v1-renamed").isEmpty());
+        check("StagedCopyDao delete", copies.delete(copy.copy()) && copies.findById(nodeId, modelId, "v1-renamed").isEmpty());
+        check("CompatibilityDao delete", compats.delete(compat.compatibility())
+                && compats.findById(envId, modelId, "v1-renamed").isEmpty());
         check("JobDao delete", jobs.delete(jobId) && jobs.findById(jobId).isEmpty());
         check("ReservationDao delete (GPU rows cascade)", reservations.delete(resId) && reservations.findById(resId).isEmpty()
                 && reservations.gpuIds(resId).isEmpty());
@@ -294,11 +375,12 @@ public final class DaoTestMain {
             UserDao users = new UserDao(c);
             ClusterUser pi = users.findById(piId).orElseThrow();
             users.update(new ClusterUser(piId, pi.netId(), pi.fullName(), pi.email(), "PhD", false, true, pi.createdAt()));
-            expectError("PI who is not Faculty is rejected", "GH008", () -> GroupService.create(newGroup));
+            expectError("PI who is not Faculty is rejected", "GH008",
+                    () -> Transactions.run(c2 -> GroupService.create(c2, newGroup)));
             users.update(pi);
         }
 
-        int groupId = GroupService.create(newGroup);
+        int groupId = Transactions.run(c -> GroupService.create(c, newGroup));
         try (Connection c = Database.open()) {
             GroupDao groups = new GroupDao(c);
             check("GroupService.create saves the group and the PI membership",
@@ -320,7 +402,7 @@ public final class DaoTestMain {
             got = e.getSQLState();
         }
         try (Connection c = Database.open()) {
-            boolean nothingKept = new GroupDao(c).search(TEST_GROUP, null, null).isEmpty();
+            boolean nothingKept = new GroupDao(c).search(TEST_GROUP, null, null, null).isEmpty();
             check(name + " (" + got + ")", got.equals(sqlState) && nothingKept);
         }
     }
@@ -328,8 +410,8 @@ public final class DaoTestMain {
     private static void removeServiceTestRows() throws SQLException {
         Transactions.run(c -> {
             GroupDao groups = new GroupDao(c);
-            for (ResearchGroup g : groups.search(TEST_GROUP, null, null)) {
-                groups.delete(g.groupId());
+            for (GroupRow row : groups.search(TEST_GROUP, null, null, null)) {
+                groups.delete(row.group().groupId());
             }
             UserDao users = new UserDao(c);
             for (ClusterUser u : users.search(TEST_PI, null, null, null)) {

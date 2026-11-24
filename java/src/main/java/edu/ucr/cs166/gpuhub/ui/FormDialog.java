@@ -12,7 +12,7 @@ import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -23,16 +23,16 @@ public final class FormDialog<T> extends JDialog {
 
     private final EntityForm<T> form;
     private final Function<T, Transactions.Work<Boolean>> save;
-    private final Consumer<Boolean> onSaved;
+    private final BiConsumer<T, Boolean> onSaved;
     private final JButton saveButton = new JButton("Save");
     private final JButton cancelButton = new JButton("Cancel");
 
     /**
      * @param save    turns the object from the form into the database work that stores it
-     * @param onSaved called after the commit with the work's result (false: row no longer exists)
+     * @param onSaved called after the commit with the object and the work's result (false: row no longer exists)
      */
     public FormDialog(Component parent, String title, EntityForm<T> form,
-                      Function<T, Transactions.Work<Boolean>> save, Consumer<Boolean> onSaved) {
+                      Function<T, Transactions.Work<Boolean>> save, BiConsumer<T, Boolean> onSaved) {
         super(SwingUtilities.getWindowAncestor(parent), title, ModalityType.APPLICATION_MODAL);
         this.form = form;
         this.save = save;
@@ -59,7 +59,7 @@ public final class FormDialog<T> extends JDialog {
     }
 
     private void save() {
-        T entity;
+        final T entity;
         try {
             entity = form.read();
         } catch (InputException e) {
@@ -70,7 +70,7 @@ public final class FormDialog<T> extends JDialog {
         DbTask.run(save.apply(entity),
                 saved -> {
                     dispose();
-                    onSaved.accept(saved);
+                    onSaved.accept(entity, saved);
                 },
                 error -> {
                     setBusy(false);

@@ -1,6 +1,8 @@
 package edu.ucr.cs166.gpuhub.dao;
 
+import edu.ucr.cs166.gpuhub.entity.GroupRow;
 import edu.ucr.cs166.gpuhub.entity.Membership;
+import edu.ucr.cs166.gpuhub.entity.MembershipRow;
 import edu.ucr.cs166.gpuhub.entity.ResearchGroup;
 
 import java.sql.Connection;
@@ -18,9 +20,25 @@ public final class GroupDao extends Dao {
                    g.weekly_gpu_hour_quota, g.created_on
               FROM research_group g""";
 
+    /** For lists: adds the PI's name and the number of members. */
+    private static final String SELECT_ROW = """
+            SELECT g.group_id, g.group_name, g.department, g.pi_user_id,
+                   g.weekly_gpu_hour_quota, g.created_on, pi.full_name AS pi_name,
+                   (SELECT COUNT(*) FROM membership m WHERE m.group_id = g.group_id) AS member_count
+              FROM research_group g
+              JOIN cluster_user pi ON pi.user_id = g.pi_user_id""";
+
     private static final String SELECT_MEMBER = """
             SELECT m.user_id, m.group_id, m.member_role, m.joined_on
               FROM membership m""";
+
+    /** For lists: adds the names, and whether this member is the group's PI. */
+    private static final String SELECT_MEMBER_ROW = """
+            SELECT m.user_id, m.group_id, m.member_role, m.joined_on,
+                   u.net_id, u.full_name, g.group_name, (g.pi_user_id = m.user_id) AS is_pi
+              FROM membership m
+              JOIN cluster_user u   ON u.user_id = m.user_id
+              JOIN research_group g ON g.group_id = m.group_id""";
 
     public GroupDao(Connection c) {
         super(c);
@@ -44,15 +62,22 @@ public final class GroupDao extends Dao {
         return queryOne(SELECT + " WHERE g.group_id = ?", GroupDao::read, groupId);
     }
 
-    /** Every filter may be null. memberUserId finds the groups a user belongs to. */
-    public List<ResearchGroup> search(String text, String department, Integer memberUserId)
+    /**
+     * Every filter may be null. memberText finds the groups with a member of that NetID or
+     * name; memberUserId finds the groups one user belongs to.
+     */
+    public List<GroupRow> search(String text, String department, String memberText, Integer memberUserId)
             throws SQLException {
         Filter f = new Filter()
                 .andContains("g.group_name ILIKE ?", text)
                 .andContains("g.department ILIKE ?", department)
+                .andContains("""
+                        EXISTS (SELECT 1 FROM membership m JOIN cluster_user u ON u.user_id = m.user_id
+                                 WHERE m.group_id = g.group_id
+                                   AND (u.net_id ILIKE ? OR u.full_name ILIKE ?))""", memberText)
                 .and("EXISTS (SELECT 1 FROM membership m WHERE m.group_id = g.group_id AND m.user_id = ?)",
                         memberUserId);
-        return queryAll(SELECT + f.where() + " ORDER BY g.group_name", GroupDao::read, f.params());
+        return queryAll(SELECT_ROW + f.where() + " ORDER BY g.group_name", GroupDao::readRow, f.params());
     }
 
     /** Returns false if the group no longer exists. A new PI must already be a member. */
@@ -83,15 +108,15 @@ public final class GroupDao extends Dao {
                 GroupDao::readMember, userId, groupId);
     }
 
-    /** Every filter may be null. */
-    public List<Membership> searchMembers(Integer userId, Integer groupId, String memberRole)
+    /** Every filter may be null. userText is looked for in NetID and name. */
+    public List<MembershipRow> searchMembers(String userText, Integer groupId, String memberRole)
             throws SQLException {
         Filter f = new Filter()
-                .and("m.user_id = ?", userId)
+                .andContains("(u.net_id ILIKE ? OR u.full_name ILIKE ?)", userText)
                 .and("m.group_id = ?", groupId)
                 .and("m.member_role = ?", memberRole);
-        return queryAll(SELECT_MEMBER + f.where() + " ORDER BY m.group_id, m.user_id",
-                GroupDao::readMember, f.params());
+        return queryAll(SELECT_MEMBER_ROW + f.where() + " ORDER BY g.group_name, u.net_id",
+                GroupDao::readMemberRow, f.params());
     }
 
     /** Changes the member's role. Returns false if the membership no longer exists. */
@@ -110,6 +135,15 @@ public final class GroupDao extends Dao {
                 rs.getInt("group_id"), rs.getString("group_name"), rs.getString("department"),
                 rs.getInt("pi_user_id"), rs.getBigDecimal("weekly_gpu_hour_quota"),
                 rs.getObject("created_on", LocalDate.class));
+    }
+
+    private static GroupRow readRow(ResultSet rs) throws SQLException {
+        return new GroupRow(read(rs), rs.getString("pi_name"), rs.getInt("member_count"));
+    }
+
+    private static MembershipRow readMemberRow(ResultSet rs) throws SQLException {
+        return new MembershipRow(readMember(rs), rs.getString("net_id"), rs.getString("full_name"),
+                rs.getString("group_name"), rs.getBoolean("is_pi"));
     }
 
     private static Membership readMember(ResultSet rs) throws SQLException {

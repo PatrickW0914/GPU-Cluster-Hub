@@ -19,4 +19,14 @@ public interface Editor<T> {
 
     /** A short name for messages, such as the hostname. */
     String nameOf(T entity);
+
+    /** What else deleting it removes (by cascade), to show in the confirmation; null if nothing. */
+    default String deleteWarning(T entity) {
+        return null;
+    }
+
+    /** What the user can do instead when rows of the given table block a delete; null if nothing. */
+    default String deleteHint(String blockingTable) {
+        return null;
+    }
 }

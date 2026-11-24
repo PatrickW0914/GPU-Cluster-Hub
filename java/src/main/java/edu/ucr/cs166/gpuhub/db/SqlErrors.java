@@ -43,7 +43,7 @@ public final class SqlErrors {
             case "GH002" -> "That GPU is in maintenance/retired or its node isn't UP.";
             case "GH003" -> "This booking would exceed your group's weekly GPU-hour quota.";
             case "GH004" -> "Select at least one GPU.";
-            case "GH005" -> "Job times must fall within the reservation.";
+            case "GH005" -> jobWindowMessage(e);
             case "GH006" -> "That model version isn't verified for this environment.";
             case "GH007" -> "Not enough NVMe space on that node.";
             case "GH008" -> "A group's PI must be a Faculty user.";
@@ -63,6 +63,27 @@ public final class SqlErrors {
                 : server.getMessage() + "\n" + server.getDetail();
     }
 
+    /**
+     * If a delete was blocked because other rows still reference the record, returns the
+     * table those rows are in; otherwise null.
+     *
+     * 23503 covers two different mistakes. PostgreSQL names the same constraint and
+     * table for both, so only the message text tells them apart:
+     *   parent side: update or delete on table "gpu" violates foreign key constraint ...
+     *   child side:  insert or update on table "gpu" violates foreign key constraint ...
+     */
+    public static String blockingTable(SQLException e) {
+        ServerErrorMessage server = serverError(e);
+        boolean blocked = "23503".equals(e.getSQLState()) && server != null
+                && detail(e).startsWith("update or delete on table");
+        return blocked ? server.getTable() : null;
+    }
+
+    /** The readable rule of a CHECK constraint, so that input validation uses the same wording. */
+    public static String rule(String checkConstraint) {
+        return CHECK_RULES.getOrDefault(checkConstraint, "A value breaks the rule " + checkConstraint + ".");
+    }
+
     // ------------------------------------------------------------------
     // One helper per kind of violation
     // ------------------------------------------------------------------
@@ -71,31 +92,34 @@ public final class SqlErrors {
         return UNIQUE_RULES.getOrDefault(constraintName(e), "That record already exists.");
     }
 
-    /**
-     * 23503 covers two different mistakes. PostgreSQL names the same constraint and
-     * table for both, so only the message text tells them apart:
-     *   parent side: update or delete on table "gpu" violates foreign key constraint ...
-     *   child side:  insert or update on table "gpu" violates foreign key constraint ...
-     */
     private static String foreignKeyMessage(SQLException e) {
-        if (detail(e).startsWith("update or delete on table")) {
-            ServerErrorMessage server = serverError(e);
-            String table = server == null ? null : server.getTable(); // the referencing table
+        String table = blockingTable(e);
+        if (table != null) {
             return "Can't delete: this record is still referenced by "
-                    + (table == null ? "other records" : TABLE_LABELS.getOrDefault(table, table)) + ".";
+                    + TABLE_LABELS.getOrDefault(table, table) + ".";
         }
         return switch (constraintName(e)) {
             case "fk_res_membership" ->
                     "Referenced record doesn't exist: that user is not a member of that group.";
             case "fk_group_pi_membership" ->
                     "Referenced record doesn't exist: the PI must be a member of the group.";
+            case "fk_job_reservation" ->
+                    "Referenced record doesn't exist: there is no reservation with that number.";
+            case "fk_jl_job" ->
+                    "Referenced record doesn't exist: there is no job with that number.";
             default -> "Referenced record doesn't exist.";
         };
     }
 
     private static String checkMessage(SQLException e) {
-        String name = constraintName(e);
-        return CHECK_RULES.getOrDefault(name, "A value breaks the rule " + name + ".");
+        return rule(constraintName(e));
+    }
+
+    /** GH005 is also raised for a job under a cancelled reservation. */
+    private static String jobWindowMessage(SQLException e) {
+        return detail(e).contains("is cancelled")
+                ? "That reservation is cancelled, so no job can run in it."
+                : "Job times must fall within the reservation.";
     }
 
     private static String doubleBookedMessage(SQLException e) {

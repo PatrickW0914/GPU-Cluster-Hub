@@ -12,14 +12,17 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * The layout shared by every entity screen:
@@ -37,7 +40,8 @@ public abstract class EntityPanel<T> extends JPanel {
 
     private final String entityName;
     private final ResultsTable<T> table;
-    private final JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+    private final JPanel filters = new JPanel(new WrapLayout(6, 4));
+    private final List<JComponent> filterFields = new ArrayList<>();
     private final JButton searchButton = new JButton("Search");
     private final JButton clearButton = new JButton("Clear");
     private final JButton addButton = new JButton("Add");
@@ -95,7 +99,14 @@ public abstract class EntityPanel<T> extends JPanel {
         // Load fresh data each time the screen comes into view.
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
-                autoSearch();
+                withChoices(this::autoSearch, error -> showMessage(SqlErrors.message(error), false));
+            }
+        });
+        // The filters may wrap differently at another width, so lay out again.
+        filters.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                filters.revalidate();
             }
         });
         updateButtons();
@@ -107,9 +118,21 @@ public abstract class EntityPanel<T> extends JPanel {
      */
     protected abstract Transactions.Work<List<T>> search();
 
+    /**
+     * For screens with dropdowns filled from the database: returns a query (run on a background
+     * thread) whose result puts the choices into the dropdowns (run on the Swing thread). Called
+     * when the screen is shown and before a form opens, so the choices are always up to date.
+     */
+    protected Transactions.Work<Runnable> loadChoices() {
+        return null; // no such dropdowns
+    }
+
     protected final void addFilter(String label, JComponent field) {
-        filters.add(new JLabel(label));
-        filters.add(field);
+        JPanel pair = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0)); // stays together when wrapping
+        pair.add(new JLabel(label));
+        pair.add(field);
+        filters.add(pair);
+        filterFields.add(field);
         if (field instanceof JTextField text) {
             text.addActionListener(e -> userSearch()); // Enter searches
         }
@@ -161,7 +184,7 @@ public abstract class EntityPanel<T> extends JPanel {
     }
 
     private void clearFilters() {
-        for (Component field : filters.getComponents()) {
+        for (JComponent field : filterFields) {
             if (field instanceof JTextField text) {
                 text.setText("");
             } else if (field instanceof JComboBox<?> box) {
@@ -176,22 +199,50 @@ public abstract class EntityPanel<T> extends JPanel {
     // ------------------------------------------------------------------
 
     private void addNew() {
-        new FormDialog<>(this, "Add " + entityName, editor.form(null),
+        openForm(() -> new FormDialog<>(this, "Add " + entityName, editor.form(null),
                 editor::insert,
-                saved -> finished(true, entityName + " added.")).setVisible(true);
+                (added, ok) -> finished(ok, entityName + " " + editor.nameOf(added) + " added.")));
     }
 
     private void editSelected() {
         T old = table.selected();
-        new FormDialog<>(this, "Edit " + entityName, editor.form(old),
+        openForm(() -> new FormDialog<>(this, "Edit " + entityName, editor.form(old),
                 edited -> editor.update(old, edited),
-                found -> finished(found, entityName + " " + editor.nameOf(old) + " updated.")).setVisible(true);
+                (edited, found) -> finished(found, entityName + " " + editor.nameOf(edited) + " updated.")));
+    }
+
+    /** Loads the dropdown choices first, because the form's constructor needs them. */
+    private void openForm(Supplier<FormDialog<T>> dialog) {
+        setBusy(true);
+        withChoices(
+                () -> {
+                    setBusy(false);
+                    dialog.get().setVisible(true);
+                },
+                error -> {
+                    setBusy(false);
+                    Messages.databaseError(this, error);
+                });
+    }
+
+    private void withChoices(Runnable next, Consumer<SQLException> onError) {
+        Transactions.Work<Runnable> work = loadChoices();
+        if (work == null) {
+            next.run();
+            return;
+        }
+        DbTask.run(work,
+                showChoices -> {
+                    showChoices.run();
+                    next.run();
+                },
+                onError);
     }
 
     private void deleteSelected() {
         T entity = table.selected();
         String name = entityName + " " + editor.nameOf(entity);
-        if (!Messages.confirmDelete(this, name)) {
+        if (!Messages.confirmDelete(this, name, editor.deleteWarning(entity))) {
             return;
         }
         setBusy(true);
@@ -202,7 +253,9 @@ public abstract class EntityPanel<T> extends JPanel {
                 },
                 error -> {
                     setBusy(false);
-                    Messages.databaseError(this, error);
+                    String blockingTable = SqlErrors.blockingTable(error);
+                    Messages.databaseError(this, error,
+                            blockingTable == null ? null : editor.deleteHint(blockingTable));
                 });
     }
 
