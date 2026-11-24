@@ -3,7 +3,6 @@ package edu.ucr.cs166.gpuhub.ui.screens;
 import edu.ucr.cs166.gpuhub.dao.ModelVersionDao;
 import edu.ucr.cs166.gpuhub.dao.ReportDao;
 import edu.ucr.cs166.gpuhub.db.SqlErrors;
-import edu.ucr.cs166.gpuhub.entity.Choice;
 import edu.ucr.cs166.gpuhub.entity.ModelName;
 import edu.ucr.cs166.gpuhub.entity.Report;
 import edu.ucr.cs166.gpuhub.entity.ReportColumn;
@@ -131,10 +130,7 @@ public final class QueriesPanel extends JPanel {
     }
 
     private void loadModels() {
-        DbTask.run(c -> new ModelVersionDao(c).search(null, null, null, null, null, null).stream()
-                        .map(r -> new Choice<>(new ModelName(r.modelName(), r.version().versionTag()),
-                                r.modelName() + " : " + r.version().versionTag()))
-                        .toList(),
+        DbTask.run(c -> VersionsPanel.nameChoices(new ModelVersionDao(c)),
                 models -> {
                     boolean firstTime = model.getItemCount() == 1;
                     model.setChoices(models);

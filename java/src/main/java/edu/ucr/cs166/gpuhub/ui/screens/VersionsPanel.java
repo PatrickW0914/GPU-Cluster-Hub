@@ -7,6 +7,7 @@ import edu.ucr.cs166.gpuhub.dao.NodeDao;
 import edu.ucr.cs166.gpuhub.db.Transactions;
 import edu.ucr.cs166.gpuhub.entity.Allowed;
 import edu.ucr.cs166.gpuhub.entity.Choice;
+import edu.ucr.cs166.gpuhub.entity.ModelName;
 import edu.ucr.cs166.gpuhub.entity.ModelVersion;
 import edu.ucr.cs166.gpuhub.entity.VersionKey;
 import edu.ucr.cs166.gpuhub.entity.VersionRow;
@@ -94,6 +95,14 @@ public final class VersionsPanel extends EntityPanel<VersionRow> implements Edit
     static List<Choice<VersionKey>> choices(ModelVersionDao versions) throws SQLException {
         return versions.search(null, null, null, null, null, null).stream()
                 .map(r -> new Choice<>(new VersionKey(r.version().modelId(), r.version().versionTag()),
+                        r.modelName() + " : " + r.version().versionTag()))
+                .toList();
+    }
+
+    /** The same, identified by names, for the queries that take names. */
+    static List<Choice<ModelName>> nameChoices(ModelVersionDao versions) throws SQLException {
+        return versions.search(null, null, null, null, null, null).stream()
+                .map(r -> new Choice<>(new ModelName(r.modelName(), r.version().versionTag()),
                         r.modelName() + " : " + r.version().versionTag()))
                 .toList();
     }

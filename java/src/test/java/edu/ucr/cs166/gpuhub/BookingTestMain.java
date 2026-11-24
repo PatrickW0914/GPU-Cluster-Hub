@@ -1,26 +1,38 @@
 package edu.ucr.cs166.gpuhub;
 
+import edu.ucr.cs166.gpuhub.dao.CompatibilityDao;
 import edu.ucr.cs166.gpuhub.dao.EnvDao;
 import edu.ucr.cs166.gpuhub.dao.GpuDao;
 import edu.ucr.cs166.gpuhub.dao.GpuTypeDao;
 import edu.ucr.cs166.gpuhub.dao.GroupDao;
 import edu.ucr.cs166.gpuhub.dao.JobDao;
+import edu.ucr.cs166.gpuhub.dao.ModelDao;
+import edu.ucr.cs166.gpuhub.dao.ModelVersionDao;
 import edu.ucr.cs166.gpuhub.dao.NodeDao;
 import edu.ucr.cs166.gpuhub.dao.ReservationDao;
+import edu.ucr.cs166.gpuhub.dao.StagedCopyDao;
 import edu.ucr.cs166.gpuhub.dao.UserDao;
 import edu.ucr.cs166.gpuhub.db.SqlErrors;
 import edu.ucr.cs166.gpuhub.db.Transactions;
+import edu.ucr.cs166.gpuhub.entity.AiModel;
 import edu.ucr.cs166.gpuhub.entity.ClusterUser;
+import edu.ucr.cs166.gpuhub.entity.Compatibility;
 import edu.ucr.cs166.gpuhub.entity.ComputeNode;
 import edu.ucr.cs166.gpuhub.entity.Gpu;
 import edu.ucr.cs166.gpuhub.entity.GpuType;
 import edu.ucr.cs166.gpuhub.entity.Job;
+import edu.ucr.cs166.gpuhub.entity.ModelName;
+import edu.ucr.cs166.gpuhub.entity.ModelVersion;
+import edu.ucr.cs166.gpuhub.entity.ResearchGroup;
 import edu.ucr.cs166.gpuhub.entity.Reservation;
 import edu.ucr.cs166.gpuhub.entity.ReservationRow;
-import edu.ucr.cs166.gpuhub.entity.ResearchGroup;
+import edu.ucr.cs166.gpuhub.entity.SlotCandidate;
+import edu.ucr.cs166.gpuhub.entity.SlotRequest;
 import edu.ucr.cs166.gpuhub.entity.SoftwareEnv;
+import edu.ucr.cs166.gpuhub.entity.StagedCopy;
 import edu.ucr.cs166.gpuhub.service.BookingService;
 import edu.ucr.cs166.gpuhub.service.GroupService;
+import edu.ucr.cs166.gpuhub.service.SlotFinder;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -65,6 +77,7 @@ public final class BookingTestMain {
             testEditing();
             testCancelling();
             testRace();
+            testSlotFinder();
         } catch (SQLException e) {
             check("unexpected error: " + SqlErrors.message(e) + " " + SqlErrors.detail(e), false);
         } catch (RuntimeException e) {
@@ -170,6 +183,52 @@ public final class BookingTestMain {
                 && outcomes.stream().filter("GH001"::equals).count() == threads - 1);
     }
 
+    /**
+     * The test node has 3 GPUs of 24 GB and the test model needs 40 GB, so 2 GPUs. GPU A is booked
+     * 9:00-11:00 and GPU B 9:00-10:30. The earliest 2-hour slot is therefore 10:30 with B and C,
+     * which a search that only tries full hours would miss.
+     */
+    private static void testSlotFinder() throws SQLException {
+        LocalDateTime now = LocalDateTime.of(2027, 4, 5, 8, 20);
+        LocalDateTime nine = LocalDateTime.of(2027, 4, 5, 9, 0);
+        book(nine, nine.plusHours(2), gpuA);
+        book(nine, nine.plusMinutes(90), gpuB);
+        ModelName model = new ModelName("ZZBOOK-Model", "v1");
+
+        List<SlotCandidate> slots = find(new SlotRequest(model, 2, 7, ""), now);
+        SlotCandidate first = slots.get(0);
+        check("slot finder: earliest slot is when a booking ends, not only on the hour",
+                first.start().equals(nine.plusMinutes(90)) && first.end().equals(nine.plusMinutes(210))
+                && first.gpusNeeded() == 2 && first.freeGpus() == 2 && first.totalVramGb() == 48
+                && first.gpuIds().equals(List.of(gpuB, gpuC)) && first.envs().equals("zzbook-env"));
+        check("slot finder: next option is when GPU A is free too",
+                slots.size() == 2 && slots.get(1).start().equals(nine.plusHours(2)) && slots.get(1).freeGpus() == 3);
+        check("slot finder: minimum GPU type", find(new SlotRequest(model, 2, 7, "ZZBOOK-GPU"), now).size() == 2
+                && find(new SlotRequest(model, 2, 7, "H100-SXM5-80GB"), now).isEmpty());
+
+        check("book the found slot", Transactions.run(c ->
+                new ReservationDao(c).gpuIds(SlotFinder.book(c, first, userId, groupId, "zzbook", now)))
+                .equals(List.of(gpuB, gpuC)));
+        refused("book the same slot again", "GH001",
+                () -> Transactions.run(c -> SlotFinder.book(c, first, userId, groupId, "zzbook", now)));
+        check("slot finder no longer offers it",
+                find(new SlotRequest(model, 2, 7, ""), now).get(0).start().equals(first.end()));
+
+        Transactions.run(c -> new NodeDao(c).update(node("11.8", "UP")));
+        check("slot finder: environment needs a newer CUDA than the node supports",
+                find(new SlotRequest(model, 2, 7, ""), now).isEmpty());
+        Transactions.run(c -> new NodeDao(c).update(node("12.4", "DRAIN")));
+        check("slot finder: node is not UP", find(new SlotRequest(model, 2, 7, ""), now).isEmpty());
+    }
+
+    private static List<SlotCandidate> find(SlotRequest request, LocalDateTime now) throws SQLException {
+        return Transactions.run(c -> SlotFinder.find(c, request, now));
+    }
+
+    private static ComputeNode node(String maxCuda, String status) {
+        return new ComputeNode(nodeId, "zzbook-node", "gpu", 8, 64, BigDecimal.ONE, new BigDecimal(maxCuda), status, null);
+    }
+
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
@@ -238,9 +297,13 @@ public final class BookingTestMain {
             userId = new UserDao(c).insert(new ClusterUser(0, "zzbook1", "Book One", "zzbook1@example.edu", "Faculty", false, true, null));
             otherUserId = new UserDao(c).insert(new ClusterUser(0, "zzbook2", "Book Two", "zzbook2@example.edu", "PhD", false, true, null));
             groupId = GroupService.create(c, new ResearchGroup(0, "ZZ Book Group", "Testing", userId, new BigDecimal("40.0"), null));
-            nodeId = new NodeDao(c).insert(new ComputeNode(0, "zzbook-node", "gpu", 8, 64, BigDecimal.ONE, new BigDecimal("12.4"), "UP", null));
+            nodeId = new NodeDao(c).insert(node("12.4", "UP"));
             typeId = new GpuTypeDao(c).insert(new GpuType(0, "ZZBOOK-GPU", "NVIDIA", "Test", 24, new BigDecimal("8.6"), BigDecimal.TEN, true));
             envId = new EnvDao(c).insert(new SoftwareEnv(0, "zzbook-env", "3.11", new BigDecimal("12.1"), "PyTorch", "2.4", null, null));
+            int modelId = new ModelDao(c).insert(new AiModel(0, "ZZBOOK-Model", "LLM", "PyTorch", "MIT", null, userId, null, null));
+            new ModelVersionDao(c).insert(new ModelVersion(modelId, "v1", BigDecimal.TEN, "bf16", new BigDecimal("40.0"), BigDecimal.TEN, null, false));
+            new CompatibilityDao(c).insert(new Compatibility(envId, modelId, "v1", LocalDate.of(2026, 1, 1), null));
+            new StagedCopyDao(c).insert(new StagedCopy(nodeId, modelId, "v1", "/zzbook", LocalDate.of(2026, 1, 1)));
             int[] ids = new int[3];
             for (int slot = 0; slot < 3; slot++) {
                 ids[slot] = new GpuDao(c).insert(new Gpu(0, nodeId, slot, typeId, "ZZBOOK" + slot, "AVAILABLE", LocalDate.of(2026, 1, 1)));
@@ -261,6 +324,9 @@ public final class BookingTestMain {
             ReservationDao reservations = new ReservationDao(c);
             for (var row : reservations.search("zzbook1", null, null, null, null, null)) {
                 reservations.delete(row.reservation().reservationId());
+            }
+            for (var row : new ModelDao(c).search("ZZBOOK", null, null, null, null, null)) {
+                new ModelDao(c).delete(row.model().modelId()); // versions and their records cascade
             }
             for (var row : new GpuDao(c).search(null, null, null, "ZZBOOK", null, null)) {
                 new GpuDao(c).delete(row.gpu().gpuId());

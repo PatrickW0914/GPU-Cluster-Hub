@@ -24,7 +24,7 @@ The booking screen shows the same two numbers ("Rows in the database").
 
 ## 1. A successful 2-GPU booking
 
-Open **GPU Booking** and enter:
+Open **GPU Booking → Book GPUs** and enter:
 
 | Field | Value |
 |---|---|
@@ -108,7 +108,7 @@ select the Demo 1 reservation.
 
 ```bash
 cd java
-java -cp target/gpuhub.jar:target/test-classes edu.ucr.cs166.gpuhub.BookingTestMain   # 19 passed
+java -cp target/gpuhub.jar:target/test-classes edu.ucr.cs166.gpuhub.BookingTestMain   # 27 passed
 ```
 
 ## Clean up

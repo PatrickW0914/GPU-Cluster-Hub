@@ -14,6 +14,7 @@ import edu.ucr.cs166.gpuhub.ui.screens.ModelsPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.NodesPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.QueriesPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.ReservationsPanel;
+import edu.ucr.cs166.gpuhub.ui.screens.SlotFinderPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.StagedCopiesPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.UsersPanel;
 import edu.ucr.cs166.gpuhub.ui.screens.VersionsPanel;
@@ -50,7 +51,9 @@ public final class MainWindow extends JFrame {
                 .with("Environments", new EnvsPanel())
                 .with("Compatibility", new CompatibilityPanel(clock))
                 .with("Staged copies", new StagedCopiesPanel(clock)));
-        addSection("GPU Booking", new BookingPanel(clock));
+        addSection("GPU Booking", tabs()
+                .with("Book GPUs", new BookingPanel(clock))
+                .with("Slot finder", new SlotFinderPanel(clock)));
         addSection("Reservations & Jobs", tabs()
                 .with("Reservations", new ReservationsPanel(clock))
                 .with("Jobs", new JobsPanel(clock))
